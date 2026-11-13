@@ -12,6 +12,7 @@
     "full_history_and_exam": 0.25,
     "exam_sign_deep_dive": 0.3,
     "ethics_or_communication": 0.1,
+    "recall_questions": 0.2,
     "exam_style_questions": 0.5,
     "ecg_when_topic_has_one": 0.8,
     "handover_contains_an_error": 0.5

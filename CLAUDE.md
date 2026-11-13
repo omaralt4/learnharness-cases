@@ -52,6 +52,7 @@ The installed plugin lives at `%APPDATA%\LearnHarness\data\plugins\case-images\d
 - `--system` takes one system, several separated by commas, or `all`. Several systems pool their topics.
 - `--json` prints exactly one JSON object on stdout; a failure is `{"ok": false, "error": ...}` with exit code 1. Without it, output is plain text.
 - `--seed N` goes before the command.
+- Extras (rolled per case, written into the case file as ON/off): full history and exam, exam sign deep dive, ethics or communication, recall questions, exam-style questions. **Adding an extra touches four places:** `EXTRA_LABELS` and `DEFAULT_SCENARIOS` in `pick_case.py`, `DEFAULT_SCENARIOS` and `LABELS` in `backend.cjs` (the Mix tab then shows it by itself), `scenarios.json`, and a paragraph in `10-doctrine.md` telling the agent what the extra means (only when the user supplies or approves the text). Adding one changes which cases a given `--seed` produces.
 - Progress keys are `system/id`. `load_progress()` re-keys bare ids from older files under `cardio` and saves the original as `progress.json.bak` once.
 
 ## Rules that must not break

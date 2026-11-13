@@ -175,7 +175,7 @@ const ORDERS = ["unseen_first", "review_first"];
 // Same defaults and labels as pick_case.py.
 const DEFAULT_SCENARIOS = {
   encounters: { ed_first_presentation: 35, ward_called_by_nurse: 15, ward_round_day_2: 15, handover: 10, clinic_follow_up: 15, clinic_new_referral: 10 },
-  extras: { full_history_and_exam: 0.25, exam_sign_deep_dive: 0.3, ethics_or_communication: 0.1, exam_style_questions: 0.5, ecg_when_topic_has_one: 0.8, handover_contains_an_error: 0.5 },
+  extras: { full_history_and_exam: 0.25, exam_sign_deep_dive: 0.3, ethics_or_communication: 0.1, recall_questions: 0.2, exam_style_questions: 0.5, ecg_when_topic_has_one: 0.8, handover_contains_an_error: 0.5 },
   review: { weak_below: 0.7, after_days: 2, order: "unseen_first" },
 };
 const LABELS = {
@@ -188,6 +188,7 @@ const LABELS = {
   full_history_and_exam: "Full history and exam",
   exam_sign_deep_dive: "Exam sign deep dive",
   ethics_or_communication: "Ethics or communication",
+  recall_questions: "Recall questions",
   exam_style_questions: "Exam-style questions",
   ecg_when_topic_has_one: "ECG, when the topic has one",
   handover_contains_an_error: "Handover contains a planted error",

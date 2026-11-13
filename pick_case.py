@@ -35,7 +35,7 @@ Every command also takes --json, which prints one JSON object instead of text.
 The Cases page of the Rounds tools plugin in LearnHarness uses it.
 
 Each case rolls an encounter type (ED, ward, handover, clinic...) and a set of
-extras (full history and exam, exam sign, ethics, exam-style questions, ECG)
+extras (full history and exam, exam sign, ethics, recall questions, exam-style questions, ECG)
 using the percentages in scenarios.json. Edit that file to change the mix.
 
 ECGs come from PTB-XL (PhysioNet, CC BY 4.0). Only the files a case needs are
@@ -85,13 +85,14 @@ EXTRA_LABELS = {
     "full_history_and_exam": "Full history and exam",
     "exam_sign_deep_dive": "Exam sign deep dive",
     "ethics_or_communication": "Ethics or communication",
+    "recall_questions": "Recall questions",
     "exam_style_questions": "Exam-style questions",
 }
 DEFAULT_SCENARIOS = {
     "encounters": {"ed_first_presentation": 35, "ward_called_by_nurse": 15, "ward_round_day_2": 15,
                    "handover": 10, "clinic_follow_up": 15, "clinic_new_referral": 10},
     "extras": {"full_history_and_exam": 0.25, "exam_sign_deep_dive": 0.30, "ethics_or_communication": 0.10,
-               "exam_style_questions": 0.50, "ecg_when_topic_has_one": 0.80, "handover_contains_an_error": 0.50},
+               "recall_questions": 0.20, "exam_style_questions": 0.50, "ecg_when_topic_has_one": 0.80, "handover_contains_an_error": 0.50},
     "review": {"weak_below": 0.7, "after_days": 2, "order": "unseen_first"},
 }
 
