@@ -93,7 +93,7 @@ python pick_case.py review --system cardio
 - `--json` on any command prints one JSON object instead of text. The Cases page uses it.
 - `--seed N` (before the command) makes the random picks repeatable.
 
-An older `progress.json` is converted on first use, and the original is kept as `progress.json.bak`.
+An older `progress.json` is converted on first use, and the original is kept next to it as a `.bak` file.
 
 ## Adding a system
 
@@ -108,9 +108,9 @@ An older `progress.json` is converted on first use, and the original is kept as 
 
 | Field | Meaning |
 |---|---|
-| `id`, `topic` | Short id and the topic's name. Ids only need to be unique within a system; `progress.json` keys them as `system/id`. |
+| `id`, `topic` | Short id and the topic's name. The same id in two topic files is the same topic (see Shared topics). |
 | `guideline`, `guideline_file` | One reference: its full name and its PDF's file name. |
-| `references` | Several references instead of, or as well as, the pair above: a list of `{"file", "name", "region"}`. `file` is a PDF or a chapter file from `chapters.txt`; `cardio/acs-2025.pdf` borrows a file from another system's folder. |
+| `references` | Several references instead of, or as well as, the pair above: a list of `{"file", "name", "region"}`. `file` is a PDF or a chapter file from `chapters.txt`. Add `"folder": "cardio"` when the file lives in `guidelines/cardio/` instead of this system's own folder. |
 | `region` (in a reference) | `"UK"` or another non-US region tells the agent to use that reference for presentation and approach, grade management against US practice, and name the differences at the end. |
 | `complaint` | The presenting complaint the case opens with. |
 | `tier` | `common`, `cant_miss` or `rare`. Weights are in `scenarios.json` (3, 2, 1); no tier means weight 1. |
@@ -131,6 +131,12 @@ An older `progress.json` is converted on first use, and the original is kept as 
   "ecg_codes": []
 }
 ```
+
+**Shared topics.** Give a topic the same `id` in two topic files (STEMI in `cardio.json` and `em.json`) and it is one topic with one history: a case made from either system counts as done in both, and its score decides when it comes back in either.
+
+- The entries are merged for the case, whether you tick one system or both: all references from both (each file once), all ECG codes, and every other field from the first file that has it. A STEMI made with only cardio ticked still gets the EM handbook chapter and presenting complaint; one made with only EM ticked can still get a cardio ECG.
+- The tier comes from the systems you ticked (the heavier one if both), so ticking one system weights its topics the way its own list says.
+- `status` warns if the two entries name different Step 2 systems (the first is used), or if one diagnosis is listed under two different ids.
 
 ## How a topic is chosen
 

@@ -30,7 +30,8 @@ Two kinds of case, plus a tracker:
 Nothing about a case's content is printed, only file names.
 
 Mixed practice: --system takes several systems separated by commas, or "all".
-Their topics are pooled, and the case file never names the system.
+Their topics are pooled, and the case file never names the system. The same id
+in two topic lists is one shared topic with one history.
              python pick_case.py common --system cardio,gi,pulm
 
 Every command also takes --json, which prints one JSON object instead of text.
@@ -140,6 +141,8 @@ def load_topics(system: str) -> dict:
     for t in data["topics"]:
         if not isinstance(t, dict) or not t.get("id") or not t.get("topic"):
             sys.exit(f"topics/{path.name}: every topic needs an \"id\" and a \"topic\".")
+        if not isinstance(t["id"], str) or "/" in t["id"]:
+            sys.exit(f"topics/{path.name}: the id '{t['id']}' must be text without a slash.")
     return data
 
 
@@ -166,17 +169,63 @@ def parse_systems(value, need_topics: bool = True) -> list:
     return names
 
 
-def load_pool(systems: list) -> list:
-    """Topics of all the systems in one list. Each topic gets '_system' and '_key' (system/id);
-    ids may repeat between systems, so everything in progress.json is keyed by '_key'."""
-    pool = []
-    for system in systems:
+def load_pool(systems: list, tiers: dict = None) -> list:
+    """The topics of the chosen systems in one list. The same id in two topic files is the same
+    topic, so every entry with that id is merged into one (merge_topics), including entries from
+    topic files that were not chosen: a shared topic made from one system is the full topic.
+    Each topic gets '_key' (its id; everything in progress.json is keyed by it), '_system' (the
+    first chosen file it came from), '_step2', '_refs' (its references with resolved paths) and
+    '_legacy' (True when it is in one file only and has just the old guideline/guideline_file
+    pair, which keeps the old seed text)."""
+    def entries_of(system: str, chosen: bool) -> list:
         data = load_topics(system)
-        for t in data["topics"]:
-            # A topic's own step2_system wins; otherwise the file's top-level default applies.
-            pool.append({**t, "_system": system, "_key": f"{system}/{t['id']}",
-                         "_step2": t.get("step2_system") or data.get("step2_system")})
-    return pool
+        # A topic's own step2_system wins; otherwise the file's top-level default applies.
+        return [{**t, "_system": system, "_key": t["id"], "_chosen": chosen,
+                 "_step2": t.get("step2_system") or data.get("step2_system"),
+                 "_refs": topic_references(system, t), "_legacy": "references" not in t}
+                for t in data["topics"]]
+
+    groups = {}
+    for system in systems:
+        for t in entries_of(system, True):
+            groups.setdefault(t["_key"], []).append(t)
+    for system in all_systems():
+        if system in systems:
+            continue
+        try:
+            others = entries_of(system, False)
+        except SystemExit:
+            continue  # a broken list that wasn't asked for must not stop this one; status reports it
+        for t in others:
+            if t["_key"] in groups:
+                groups[t["_key"]].append(t)
+    return [merge_topics(entries, tiers or {}) if len(entries) > 1 else entries[0] for entries in groups.values()]
+
+
+def merge_topics(entries: list, tiers: dict) -> dict:
+    """One topic from the entries that share an id (chosen systems first): every reference once
+    (by file), every ECG code once, and each other field from the first entry that has it. The
+    tier is the heaviest among the chosen systems' entries only, so ticking one system weights
+    its topics the way its own list says."""
+    merged = {}
+    for e in entries:
+        for k, v in e.items():
+            merged.setdefault(k, v)
+    refs, seen = [], set()
+    for e in entries:
+        for r in e["_refs"]:
+            if str(r["path"]).lower() not in seen:
+                seen.add(str(r["path"]).lower())
+                refs.append(r)
+    merged["_refs"] = refs
+    merged["_legacy"] = False
+    merged["ecg_codes"] = list(dict.fromkeys(c for e in entries for c in e.get("ecg_codes") or []))
+    tiered = [e for e in entries if e["_chosen"] and isinstance(e.get("tier"), str)]
+    merged.pop("tier", None)
+    if tiered:
+        merged["tier"] = max(tiered, key=lambda e: topic_weight(e, tiers))["tier"]  # first wins a tie
+    merged["_step2"] = next((e["_step2"] for e in entries if e["_step2"]), None)  # first file that says
+    return merged
 
 
 def step2_bucket(topic: dict, table: dict) -> str:
@@ -186,21 +235,20 @@ def step2_bucket(topic: dict, table: dict) -> str:
     return name if isinstance(name, str) and name in table and name != UNTAGGED else UNTAGGED
 
 
-LEGACY_SYSTEM = "cardio"  # progress.json written before mixed systems used bare topic ids, all cardio
-
-
 def migrate_progress(p: dict) -> bool:
-    """Re-key bare topic ids as system/id. Returns True if anything changed."""
+    """Topic history is keyed by topic id alone, so a topic two systems share has one history.
+    A progress.json from when keys were system/id is re-keyed: counts of the same id are added
+    together. (The oldest files already used bare ids.) Returns True if anything changed."""
     changed = False
     built = p.get("built", {})
-    for k in [k for k in built if "/" not in k]:
-        new = f"{LEGACY_SYSTEM}/{k}"
+    for k in [k for k in built if "/" in k]:
+        new = k.rsplit("/", 1)[1]
         built[new] = built.get(new, 0) + built.pop(k)
         changed = True
     for meta in p.get("cases", {}).values():
         t = meta.get("topic")
-        if t and "/" not in t:
-            meta["topic"] = f"{meta.get('system') or LEGACY_SYSTEM}/{t}"
+        if t and "/" in t:
+            meta["topic"] = t.rsplit("/", 1)[1]
             changed = True
     return changed
 
@@ -211,7 +259,7 @@ def load_progress() -> dict:
     raw = PROGRESS.read_text(encoding="utf-8")
     p = json.loads(raw)
     if migrate_progress(p):
-        backup = PROGRESS.with_name(PROGRESS.name + ".bak")
+        backup = PROGRESS.with_name(PROGRESS.name + ".system-keys.bak")
         if not backup.exists():
             backup.write_text(raw, encoding="utf-8")
         save_progress(p)
@@ -267,26 +315,42 @@ def finish(paths: list, clip: bool) -> dict:
     return out
 
 
-def guideline_path(system: str, topic: dict) -> Path:
-    return BASE / "guidelines" / system / topic["guideline_file"]
-
 
 def topic_references(system: str, topic: dict) -> list:
     """Everything a topic points at, as [{'name', 'file', 'region', 'path'}]: the old
     'guideline' + 'guideline_file' pair first (when present), then each entry of 'references'.
     'file' is a PDF (read through its converted .md) or a chapter .md written by prepare. It lives
-    in guidelines/<system>/; 'othersystem/file' borrows one from another system's folder."""
+    in guidelines/<system>/ unless the reference has "folder": "<other system>", which puts it in
+    guidelines/<other system>/ ('othersystem/file' as the file name means the same)."""
     refs = []
     if topic.get("guideline_file"):
-        refs.append({"name": topic.get("guideline", ""), "file": topic["guideline_file"], "region": ""})
+        refs.append({"name": topic.get("guideline", ""), "file": topic["guideline_file"], "region": "", "folder": ""})
     for r in topic.get("references") or []:
         if isinstance(r, dict) and isinstance(r.get("file"), str) and r["file"].strip():
             refs.append({"name": str(r.get("name") or ""), "file": r["file"].strip(),
-                         "region": str(r.get("region") or "").strip()})
+                         "region": str(r.get("region") or "").strip(), "folder": str(r.get("folder") or "").strip()})
     for r in refs:
-        folder, _, name = r["file"].replace("\\", "/").rpartition("/")
-        r["path"] = BASE / "guidelines" / (folder or system) / name
+        inline, _, name = r["file"].replace("\\", "/").rpartition("/")
+        folder = r["folder"] or inline or system
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", folder):
+            sys.exit(f"topics/{system}.json, topic '{topic.get('id')}': the reference folder '{folder}' must be "
+                     "the name of a folder in guidelines/.")
+        r["folder"] = folder
+        r["path"] = BASE / "guidelines" / folder / name
     return refs
+
+
+def referenced_paths() -> set:
+    """Every file any topic list points at, as lower-case full paths. A reference can live in
+    another system's folder, so what a folder's files are used for is a question for all lists."""
+    paths = set()
+    for system in all_systems():
+        try:
+            topics = load_topics(system)["topics"]
+        except SystemExit:
+            continue
+        paths.update(str(r["path"]).lower() for t in topics for r in topic_references(system, t))
+    return paths
 
 
 def is_us(region: str) -> bool:
@@ -502,19 +566,14 @@ def write_chapter_list(folder: Path, plans: dict) -> None:
     (folder / CHAPTER_LIST).write_text("\n".join(lines), encoding="utf-8")
 
 
-def whole_file_pdfs(system: str) -> set:
-    """Lower-case names of the PDFs this system's topics use as one whole file. Those are never
-    split into chapters, whatever their size."""
-    path = BASE / "topics" / f"{system}.json"
-    if not path.exists():
-        return set()
-    names = set()
-    for t in load_topics(system)["topics"]:
-        refs = t.get("references") if isinstance(t.get("references"), list) else []
-        for f in [t.get("guideline_file")] + [r.get("file") for r in refs if isinstance(r, dict)]:
-            if isinstance(f, str) and f.lower().endswith(".pdf") and "/" not in f:
-                names.add(f.lower())
-    return names
+def borrowed_pdfs(system: str) -> list:
+    """PDFs this system's topics use from other systems' folders ("folder" on a reference)."""
+    if not (BASE / "topics" / f"{system}.json").exists():
+        return []
+    own = BASE / "guidelines" / system
+    found = {r["path"] for t in load_topics(system)["topics"] for r in topic_references(system, t)
+             if r["path"].suffix.lower() == ".pdf" and r["path"].parent != own and r["path"].exists()}
+    return sorted(found)
 
 
 def cmd_prepare(args, rng):
@@ -525,9 +584,15 @@ def cmd_prepare(args, rng):
     several = len(args.systems) > 1
     done = 0
     files = []
+    # A PDF that any topic names as a whole file is never split, whichever folder it is in.
+    whole = {f for f in referenced_paths() if f.endswith(".pdf")}
+    handled = set()
     for system in args.systems:
         folder = BASE / "guidelines" / system
-        pdfs = sorted(folder.glob("*.pdf")) if folder.exists() else []
+        # The system's own folder, then any PDF its topics use from another system's folder.
+        pdfs = (sorted(folder.glob("*.pdf")) if folder.exists() else []) + borrowed_pdfs(system)
+        pdfs = [f for f in pdfs if f not in handled]
+        handled.update(pdfs)
         if not pdfs:
             if not several:
                 sys.exit(f"No PDFs in {folder}")
@@ -535,13 +600,18 @@ def cmd_prepare(args, rng):
             continue
         if several:
             print(f"{system}:")
-        whole = whole_file_pdfs(system)
         plans = {}
         for pdf in pdfs:
             md = pdf.with_suffix(".md")
-            entry = {"system": system, "file": pdf.name}
+            shown = pdf.name if pdf.parent == folder else f"{pdf.parent.name}/{pdf.name}"
+            entry = {"system": system, "file": shown}
             files.append(entry)
-            plan = [] if pdf.name.lower() in whole else chapter_plan(pdf)
+            try:
+                plan = [] if str(pdf).lower() in whole else chapter_plan(pdf)
+            except Exception as e:  # a damaged or empty PDF must not stop the other files
+                entry.update(state="failed", error=f"{type(e).__name__}: {e}")
+                print(f"  {shown}: FAILED ({type(e).__name__}: {e}).")
+                continue
             if plan:
                 plans[pdf.name] = plan
                 outs = [pdf.with_name(ch["file"]) for ch in plan if ch["file"]]
@@ -567,7 +637,7 @@ def cmd_prepare(args, rng):
                 entry["state"] = "already_converted"
                 print(f"  {pdf.name}: already converted")
                 continue
-            if pdf.name.lower() not in whole:
+            if str(pdf).lower() not in whole:
                 import pymupdf
                 with pymupdf.open(str(pdf)) as doc:
                     count = doc.page_count
@@ -939,8 +1009,8 @@ def pick_mixed(topics: list, built: dict, n: int, rng: random.Random, hist: dict
 
 
 def cmd_common(args, rng):
-    topics = load_pool(args.systems)
     scenarios = load_scenarios()
+    topics = load_pool(args.systems, scenarios["tiers"])
     progress = load_progress()
     built = progress.setdefault("built", {})
     enc_counts = progress.setdefault("encounters", {})
@@ -956,12 +1026,12 @@ def cmd_common(args, rng):
     for topic in chosen:
         sc = roll_scenario(scenarios, rng)
         dest = new_case_path()
-        refs = topic_references(topic["_system"], topic)
+        refs = topic["_refs"]
         states, blocks = [], []
         for i, r in enumerate(refs, 1):
             text, state = guideline_reference(r["path"], dest, i)
             states.append(state)
-            if "references" not in topic:
+            if topic["_legacy"]:
                 blocks.append(f"Current guideline: {r['name']}\n{text}\n")  # the old single-guideline seed, unchanged
                 continue
             label = "Current guideline" if is_us(r["region"]) else f"Reference ({r['region']})"
@@ -971,7 +1041,7 @@ def cmd_common(args, rng):
                           "conclusion say which recommendations you could not check against a text.\n")
         missing += "missing" in states
         unconverted += "pdf" in states
-        has_us = "references" not in topic or any(is_us(r["region"]) for r in refs)
+        has_us = topic["_legacy"] or any(is_us(r["region"]) for r in refs)
         complaint = topic.get("complaint")
 
         ecg_block, ecg_frame = (None, None)
@@ -1198,15 +1268,21 @@ def cmd_review(args, rng):
     log = read_log()
     index = progress.get("cases", {})
     names = {}
-    for sysname in {m.get("system") for m in index.values() if m.get("system")}:
+    for sysname in all_systems():
         try:
-            names.update({f"{sysname}/{t['id']}": t["topic"] for t in load_topics(sysname)["topics"]})
+            for t in load_topics(sysname)["topics"]:
+                names.setdefault(t["id"], t["topic"])
         except SystemExit:
             pass
+    # A topic belongs to every system whose list has its id, whichever system its case was made from.
+    wanted = {t["id"] for s in args.systems for t in load_topics(s)["topics"]}
     rows = []
     for case_id, e in log.items():
         meta = index.get(case_id, {})
-        if args.systems and meta.get("system") and meta["system"] not in args.systems:
+        if args.systems and meta.get("topic") in names:
+            if meta["topic"] not in wanted:
+                continue
+        elif args.systems and meta.get("system") and meta["system"] not in args.systems:
             continue
         label = names.get(meta.get("topic"), "Case report" if meta.get("report") else meta.get("topic", "Unknown"))
         rows.append((e.get("logged", ""), label, e))
@@ -1251,10 +1327,9 @@ def cmd_review(args, rng):
 
 def system_status(system: str, built: dict, show_topics: bool) -> dict:
     topics = load_topics(system)["topics"]
-    prefix = f"{system}/"
 
-    def count(t):
-        return built.get(prefix + t["id"], 0)
+    def count(t):  # by id alone: a topic shared with another system counts wherever its case was made
+        return built.get(t["id"], 0)
 
     done = [t for t in topics if count(t) > 0]
     refs = [r for t in topics for r in topic_references(system, t)]
@@ -1265,15 +1340,15 @@ def system_status(system: str, built: dict, show_topics: bool) -> dict:
     unconverted = sorted({r["file"] for r in refs
                           if r["path"].exists() and not r["path"].with_suffix(".md").exists()})
     folder = BASE / "guidelines" / system
-    expected = {r["path"].name.lower() for r in refs}
+    expected = referenced_paths()  # another system's topics may use a PDF in this folder
     # A PDF that prepare split into chapter files is in use even though no topic names the PDF itself.
-    strays = sorted(p.name for p in folder.glob("*.pdf") if p.name.lower() not in expected
+    strays = sorted(p.name for p in folder.glob("*.pdf") if str(p).lower() not in expected
                     and not any(folder.glob(glob.escape(p.stem) + "-*.md"))) if folder.exists() else []
     out = {
         "system": system,
         "topics_total": len(topics),
         "topics_covered": len(done),
-        "built": sum(v for k, v in built.items() if k.startswith(prefix)),
+        "built": sum(built.get(i, 0) for i in {t["id"] for t in topics}),
         "missing": [{"file": f, "guideline": g} for f, g in missing.items()],
         "unconverted": unconverted,
         "strays": strays,
@@ -1284,11 +1359,11 @@ def system_status(system: str, built: dict, show_topics: bool) -> dict:
     return out
 
 
-def step2_mix(systems: list, progress: dict, log: dict, table: dict, everything: bool) -> list:
+def step2_mix(systems: list, progress: dict, log: dict, table: dict, everything: bool, tiers: dict = None) -> list:
     """Built cases per Step 2 system, with the share the weights aim for among the systems these
     topic lists cover. Counts finished cases only, because a count that moves when a case is made
     tells which system that unrun case came from; everything=True (--show-topics) counts them all."""
-    pool = load_pool(systems)
+    pool = load_pool(systems, tiers)
     bucket_of = {t["_key"]: step2_bucket(t, table) for t in pool}
     present = sorted(set(bucket_of.values()))
     counts = dict.fromkeys(present, 0)
@@ -1304,13 +1379,12 @@ def step2_mix(systems: list, progress: dict, log: dict, table: dict, everything:
 
 
 def topic_warnings(table: dict, tiers: dict) -> list:
-    """Problems across all topic lists: the same id, the same topic text, or the same 'canonical'
-    diagnosis in more than one place, and tier or step2_system names scenarios.json doesn't have."""
+    """Problems across all topic lists. The same id in two files is one shared topic, which is
+    fine; what gets a warning is an id twice in one file, a shared topic whose files disagree on
+    step2_system, different ids with the same topic text or the same 'canonical' diagnosis, and
+    tier or step2_system names scenarios.json doesn't have."""
     by_id, by_text, by_canon, out = {}, {}, {}, []
     bad_tier, bad_step2 = {}, {}
-
-    def where(entries):
-        return ", ".join(f"{system} ('{topic}')" for system, topic in entries)
 
     for system in all_systems():
         try:
@@ -1322,8 +1396,9 @@ def topic_warnings(table: dict, tiers: dict) -> list:
         if default and default not in table:
             bad_step2.setdefault(str(default), set()).add(system)
         for t in data["topics"]:
-            entry = (system, str(t["topic"]))
-            by_id.setdefault(str(t["id"]).strip().lower(), []).append(entry)
+            entry = {"system": system, "id": t["id"], "topic": str(t["topic"]),
+                     "step2": t.get("step2_system") or default}
+            by_id.setdefault(t["id"], []).append(entry)
             by_text.setdefault(" ".join(str(t["topic"]).lower().split()), []).append(entry)
             if t.get("canonical"):
                 by_canon.setdefault(" ".join(str(t["canonical"]).lower().split()), []).append(entry)
@@ -1331,14 +1406,24 @@ def topic_warnings(table: dict, tiers: dict) -> list:
                 bad_tier.setdefault(str(t["tier"]), set()).add(system)
             if t.get("step2_system") and t["step2_system"] not in table:
                 bad_step2.setdefault(str(t["step2_system"]), set()).add(system)
-    flagged = set()  # one warning per group of topics, by the strongest link
-    for label, groups in (("The same topic text appears more than once", by_text),
-                          ("Topics marked as the same diagnosis (canonical '{key}')", by_canon),
-                          ("The same id '{key}' is used more than once", by_id)):
+    for tid, entries in by_id.items():
+        systems = [e["system"] for e in entries]
+        twice = sorted({x for x in systems if systems.count(x) > 1})
+        if twice:
+            out.append(f"The id '{tid}' is used more than once inside {', '.join(twice)}.")
+        said = list(dict.fromkeys(e["step2"] for e in entries if e["step2"]))
+        if len(said) > 1:
+            out.append(f"The shared topic '{tid}' has different step2_system values ("
+                       + ", ".join(f"{e['system']}: {e['step2']}" for e in entries if e["step2"])
+                       + f"). Mixed practice uses the first, {said[0]}.")
+    flagged = set()  # one warning per group of topics
+    for label, groups in (("The same topic text is listed under different ids", by_text),
+                          ("Different ids are marked as the same diagnosis (canonical '{key}')", by_canon)):
         for key, entries in groups.items():
-            if len(entries) > 1 and frozenset(entries) not in flagged:
-                flagged.add(frozenset(entries))
-                out.append(f"{label.format(key=key)}: {where(entries)}")
+            ids = frozenset(e["id"] for e in entries)
+            if len(ids) > 1 and ids not in flagged:
+                flagged.add(ids)
+                out.append(f"{label.format(key=key)}: " + ", ".join(f"{e['system']} id '{e['id']}' ('{e['topic']}')" for e in entries))
     for name, systems in sorted(bad_tier.items()):
         out.append(f"Tier '{name}' ({', '.join(sorted(systems))}) is not in scenarios.json, so those topics get weight 1.")
     for name, systems in sorted(bad_step2.items()):
@@ -1352,6 +1437,12 @@ def cmd_status(args, rng):
     built = progress.get("built", {})
     systems = [system_status(s, built, args.show_topics) for s in args.systems]
     single = len(systems) == 1
+    if single:
+        totals = {k: systems[0][k] for k in ("topics_total", "topics_covered", "built")}
+    else:  # a topic two systems share counts once in the totals
+        ids = {t["id"] for s in args.systems for t in load_topics(s)["topics"]}
+        totals = {"topics_total": len(ids), "topics_covered": sum(1 for i in ids if built.get(i, 0) > 0),
+                  "built": sum(built.get(i, 0) for i in ids)}
     hint = "  (add --show-topics to list them; this names any picked cases you haven't run yet)"
     for s in systems:
         print(f"{s['system']}: {s['topics_covered']} of {s['topics_total']} topics picked at least once, "
@@ -1362,9 +1453,9 @@ def cmd_status(args, rng):
         elif single:
             print(hint)
     if not single:
-        print(f"All {len(systems)} systems: {sum(s['topics_covered'] for s in systems)} of "
-              f"{sum(s['topics_total'] for s in systems)} topics picked at least once, "
-              f"{sum(s['built'] for s in systems)} built cases in total")
+        print(f"All {len(systems)} systems: {totals['topics_covered']} of "
+              f"{totals['topics_total']} topics picked at least once, "
+              f"{totals['built']} built cases in total (a topic two systems share counts once)")
         if not args.show_topics:
             print(hint)
     print(f"Case reports used: {len(progress.get('reports', []))}")
@@ -1391,7 +1482,7 @@ def cmd_status(args, rng):
     index = progress.get("cases", {})
     log = read_log()
     scenarios = load_scenarios()
-    mix = step2_mix(args.systems, progress, log, scenarios["step2_systems"], args.show_topics)
+    mix = step2_mix(args.systems, progress, log, scenarios["step2_systems"], args.show_topics, scenarios["tiers"])
     counted = sum(r["count"] for r in mix)
     if not single and counted:
         print(f"\nStep 2 system mix so far ({'all built cases' if args.show_topics else 'finished cases only'}): "
@@ -1408,9 +1499,7 @@ def cmd_status(args, rng):
         "step2_weighted": not single,
         "warnings": warnings,
         "systems": systems,
-        "topics_total": sum(s["topics_total"] for s in systems),
-        "topics_covered": sum(s["topics_covered"] for s in systems),
-        "built": sum(s["built"] for s in systems),
+        **totals,
         "reports_used": len(progress.get("reports", [])),
         "ecgs_used": len(progress.get("ecgs", [])),
         "encounters": [{"key": k, "label": encounter_label(k), "count": v} for k, v in ranked],

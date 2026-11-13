@@ -6,7 +6,7 @@
 /data/
 # Personal study data
 /progress.json
-/progress.json.bak
+/progress.json*.bak
 /case_log.jsonl
 /review.md
 # Machine-specific
