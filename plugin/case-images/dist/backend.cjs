@@ -177,6 +177,12 @@ const DEFAULT_SCENARIOS = {
   encounters: { ed_first_presentation: 35, ward_called_by_nurse: 15, ward_round_day_2: 15, handover: 10, clinic_follow_up: 15, clinic_new_referral: 10 },
   extras: { full_history_and_exam: 0.25, exam_sign_deep_dive: 0.3, ethics_or_communication: 0.1, recall_questions: 0.2, exam_style_questions: 0.5, ecg_when_topic_has_one: 0.8, handover_contains_an_error: 0.5 },
   review: { weak_below: 0.7, after_days: 2, order: "unseen_first" },
+  tiers: { common: 3, cant_miss: 2, rare: 1 },
+  step2_systems: {
+    renal_reproductive: 10, cardiovascular: 9, musculoskeletal_skin: 9, behavioral: 7.5, blood_immune: 7.5,
+    gastrointestinal: 7.5, nervous: 7.5, respiratory: 7.5, multisystem: 6, endocrine: 5, pregnancy: 5,
+    human_development: 3, untagged: 5,
+  },
 };
 const LABELS = {
   ed_first_presentation: "Emergency department, first presentation",
@@ -192,6 +198,22 @@ const LABELS = {
   exam_style_questions: "Exam-style questions",
   ecg_when_topic_has_one: "ECG, when the topic has one",
   handover_contains_an_error: "Handover contains a planted error",
+  common: "Common",
+  cant_miss: "Can't miss",
+  rare: "Rare",
+  renal_reproductive: "Renal, urinary and reproductive",
+  cardiovascular: "Cardiovascular",
+  musculoskeletal_skin: "Musculoskeletal and skin",
+  behavioral: "Behavioral health",
+  blood_immune: "Blood and immune",
+  gastrointestinal: "Gastrointestinal",
+  nervous: "Nervous system and special senses",
+  respiratory: "Respiratory",
+  multisystem: "Multisystem processes",
+  endocrine: "Endocrine",
+  pregnancy: "Pregnancy, childbirth and puerperium",
+  human_development: "Human development",
+  untagged: "Untagged (topics with no Step 2 system)",
 };
 const labelOf = key => LABELS[key] || (key.charAt(0).toUpperCase() + key.slice(1)).replace(/_/g, " ");
 
@@ -433,6 +455,13 @@ function registerCases(ctx) {
       reportsUsed: r.reports_used, ecgsUsed: r.ecgs_used,
       casesFinished: r.cases_finished, casesWaiting: r.cases_waiting,
       encounters: Array.isArray(r.encounters) ? r.encounters : [],
+      // The script counts finished cases only unless topic names were asked for, so this mix
+      // can't show which system a case that hasn't been run came from.
+      step2Mix: Array.isArray(r.step2_mix) ? r.step2_mix : [],
+      step2Scope: r.step2_mix_scope === "all" ? "all" : "finished",
+      step2Weighted: r.step2_weighted === true,
+      // About the topic lists themselves (duplicate ids, names), never about a case.
+      warnings: Array.isArray(r.warnings) ? r.warnings.filter(w => typeof w === "string") : [],
       // Per-system counts and topic names can give away a case that hasn't been run yet, so they
       // leave the backend only when asked for.
       systems: (Array.isArray(r.systems) ? r.systems : []).map(s => ({
@@ -496,12 +525,16 @@ function registerCases(ctx) {
     const encounters = file && publicKeys(file.encounters).length ? section(file.encounters, {}) : { ...DEFAULT_SCENARIOS.encounters };
     const extras = section(file && file.extras, DEFAULT_SCENARIOS.extras);
     const review = section(file && file.review, DEFAULT_SCENARIOS.review);
+    const tiers = section(file && file.tiers, DEFAULT_SCENARIOS.tiers);
+    const step2 = section(file && file.step2_systems, DEFAULT_SCENARIOS.step2_systems);
     const rows = o => Object.keys(o).map(key => ({ key, label: labelOf(key), value: o[key] }));
     return {
       exists: !!file,
       encounters: rows(encounters),
       extras: rows(extras),
       review: { weak_below: review.weak_below, after_days: review.after_days, order: review.order },
+      tiers: rows(tiers),
+      step2_systems: rows(step2),
     };
   });
 
@@ -525,11 +558,15 @@ function registerCases(ctx) {
     if (!isNumber(review.weak_below) || review.weak_below < 0 || review.weak_below > 1) throw new Error("'Weak below' must be between 0 and 1.");
     if (!isNumber(review.after_days) || review.after_days < 0) throw new Error("'Review after days' must be 0 or more.");
     if (!ORDERS.includes(review.order)) throw new Error("The order must be unseen_first or review_first.");
+    const tiers = numbers(given.tiers, "tier", v => v > 0, "the weight must be above 0.");
+    const step2 = numbers(given.step2_systems, "Step 2 system", v => v >= 0, "the weight must be 0 or more.");
 
     const next = readScenariosFile() || {};
     next.encounters = { ...asObject(next.encounters), ...encounters };
     next.extras = { ...asObject(next.extras), ...extras };
     next.review = { ...asObject(next.review), weak_below: review.weak_below, after_days: review.after_days, order: review.order };
+    if (Object.keys(tiers).length) next.tiers = { ...asObject(next.tiers), ...tiers };
+    if (Object.keys(step2).length) next.step2_systems = { ...asObject(next.step2_systems), ...step2 };
     writeFileAtomic(scenariosFile(), JSON.stringify(next, null, 2) + "\n");
     return { saved: true };
   });

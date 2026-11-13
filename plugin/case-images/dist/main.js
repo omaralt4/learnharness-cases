@@ -372,6 +372,29 @@ function mountCases(ctx, container, signal) {
             h("td", {}, h("div", { class: "rt-bar" }, h("i", { style: `width:${Math.round(100 * e.count / total)}%` }))),
             h("td", { class: "rt-n", text: `${e.count} (${Math.round(100 * e.count / total)}%)` })))))
         : h("p", { class: "rt-muted", text: "No cases made yet." }));
+      const mix = s.step2Mix || [];
+      const mixTotal = mix.reduce((sum, r) => sum + r.count, 0);
+      if (mix.length > 1 || mixTotal) {
+        out.push(h("h2", { text: "Step 2 system mix so far" }),
+          h("p", { class: "rt-muted", text: (s.step2Scope === "all"
+            ? "Counts every built case, including ones you haven't run."
+            : "Counts finished cases only, so it can't give away a case you haven't run.")
+            + (s.step2Weighted ? " Target is the share the weights in the Mix tab aim for among the systems your ticked topic lists cover." : " With one system ticked, cases are not weighted by Step 2 system.") }));
+        out.push(h("table", { class: "rt-table" },
+          h("thead", {}, h("tr", {}, h("th", { text: "Step 2 system" }), h("th", {}), h("th", { class: "rt-n", text: "Cases" }), ...(s.step2Weighted ? [h("th", { class: "rt-n", text: "Target" })] : []))),
+          h("tbody", {}, ...mix.map(r => {
+            const part = mixTotal ? r.count / mixTotal : 0;
+            return h("tr", {},
+              h("td", { text: r.label }),
+              h("td", {}, h("div", { class: "rt-bar" }, h("i", { style: `width:${Math.round(100 * part)}%` }))),
+              h("td", { class: "rt-n", text: mixTotal ? `${r.count} (${Math.round(100 * part)}%)` : "0" }),
+              ...(s.step2Weighted ? [h("td", { class: "rt-n", text: percent(r.target) })] : []));
+          }))));
+      }
+      if (s.warnings && s.warnings.length) {
+        out.push(h("h2", { text: "Check the topic lists" }),
+          h("div", { class: "rt-box rt-warn", role: "status" }, h("ul", {}, ...s.warnings.map(w => h("li", { text: w })))));
+      }
       out.push(h("h2", { text: "Guideline files" }));
       for (const sys of s.systems) {
         const clean = !sys.missing.length && !sys.unconverted.length && !sys.strays.length;
@@ -446,13 +469,18 @@ function mountCases(ctx, container, signal) {
         encounters: Object.fromEntries(s.encounters.map(r => [r.key, Number(r.value) || 0])),
         extras: Object.fromEntries(s.extras.map(r => [r.key, Number(r.value) || 0])),
         review: { weak_below: Number(s.review.weak_below) || 0, after_days: Number(s.review.after_days) || 0, order: s.review.order },
+        tiers: Object.fromEntries((s.tiers || []).map(r => [r.key, Number(r.value) || 1])),
+        step2_systems: Object.fromEntries((s.step2_systems || []).map(r => [r.key, Number(r.value) || 0])),
       };
       const shares = {};
+      const step2Shares = {};
       const status = h("div", { "aria-live": "polite" });
       const save = button("Save", onSave);
       const refreshShares = () => {
         const total = Object.values(state.encounters).reduce((a, b) => a + b, 0);
         for (const [key, el] of Object.entries(shares)) el.textContent = total > 0 ? `${Math.round(100 * state.encounters[key] / total)}%` : "–";
+        const step2Total = Object.values(state.step2_systems).reduce((a, b) => a + b, 0);
+        for (const [key, el] of Object.entries(step2Shares)) el.textContent = step2Total > 0 ? `${Math.round(100 * state.step2_systems[key] / step2Total)}%` : "–";
         save.disabled = !(total > 0);
         if (!(total > 0)) status.replaceChildren(h("p", { class: "rt-muted", text: "At least one encounter needs a weight above 0." }));
         else if (status.dataset.kind !== "saved") status.replaceChildren();
@@ -487,6 +515,19 @@ function mountCases(ctx, container, signal) {
           ...pair(row.label, () => state.extras[row.key], v => { state.extras[row.key] = Math.round(v * 100) / 100; shown.textContent = percent(v); }, { min: 0, max: 1, step: 0.05 }),
           shown);
       }
+      const tierGrid = h("div", { class: "rt-mix" });
+      for (const row of s.tiers || []) {
+        tierGrid.append(h("span", { text: row.label }),
+          ...pair(`${row.label} tier weight`, () => state.tiers[row.key], v => { state.tiers[row.key] = v; }, { min: 0.5, max: Math.max(10, state.tiers[row.key]), step: 0.5 }),
+          h("span", {}));
+      }
+      const step2Grid = h("div", { class: "rt-mix" });
+      for (const row of s.step2_systems || []) {
+        step2Shares[row.key] = h("span", { class: "rt-n", title: "Share if your ticked topic lists covered every system" });
+        step2Grid.append(h("span", { text: row.label }),
+          ...pair(`${row.label} weight`, () => state.step2_systems[row.key], v => { state.step2_systems[row.key] = v; }, { min: 0, max: Math.max(20, state.step2_systems[row.key]), step: 0.5 }),
+          step2Shares[row.key]);
+      }
       const weakShown = h("span", { class: "rt-n", text: percent(state.review.weak_below) });
       const days = h("input", { class: "rt-input rt-num", type: "number", min: 0, step: 0.5, value: state.review.after_days, "aria-label": "Review after days" });
       days.addEventListener("input", () => { const v = Number(days.value); if (days.value.trim() !== "" && Number.isFinite(v) && v >= 0) { state.review.after_days = v; changed(); } });
@@ -512,6 +553,12 @@ function mountCases(ctx, container, signal) {
         reviewGrid,
         h("div", { class: "rt-row" }, h("label", { class: "rt-check" }, h("span", { text: "A weak topic comes back after this many days" }), days)),
         h("div", { class: "rt-row" }, h("label", { class: "rt-check" }, h("span", { text: "Order" }), order)),
+        h("h2", { text: "Topic tiers" }),
+        h("p", { class: "rt-muted", text: "For topic lists that mark topics as common, can't miss or rare. Among topics you haven't seen, the heavier tier comes first; after that, a tier with weight 3 comes up three times as often as one with weight 1. A topic with no tier has weight 1." }),
+        tierGrid,
+        h("h2", { text: "Step 2 systems (mixed practice)" }),
+        h("p", { class: "rt-muted", text: "Used only when several systems are ticked. Each case first draws a Step 2 system with these weights, among the systems your ticked topic lists cover, then picks a topic inside it. The defaults are the midpoints of the USMLE Step 2 CK content ranges. The last column is the share if every system were covered." }),
+        step2Grid,
         h("div", { class: "rt-row" }, save, button("Revert", () => load(), true)),
         status);
       refreshShares();
@@ -559,12 +606,13 @@ function mountCases(ctx, container, signal) {
       const describe = f => {
         if (f.state === "converted") {
           let line = `Converted: ${f.pages} pages, ${Number(f.words).toLocaleString()} words, ${f.sections} sections indexed`;
+          if (f.chapters) line += `, split into ${f.chapters} chapter files (listed in chapters.txt in that guidelines folder)`;
           if (f.sections < 5) line += ". Few headings found, so the contents list will be thin";
           if (f.thin_pages && f.thin_pages.length) line += `. Little or no text on ${f.thin_pages.length} page${f.thin_pages.length === 1 ? "" : "s"} (usually figures)`;
           return line + ".";
         }
         if (f.state === "failed") return `Failed (${f.error}). Cases will use the guideline from the model's own knowledge.`;
-        return "Already converted.";
+        return f.chapters ? `Already converted (${f.chapters} chapter files, listed in chapters.txt).` : "Already converted.";
       };
       body.replaceChildren(
         h("p", { text: `Converted ${s.converted} file${s.converted === 1 ? "" : "s"}.` }),
