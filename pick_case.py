@@ -27,6 +27,13 @@ Two kinds of case, plus a tracker:
 
 Nothing about a case's content is printed, only file names.
 
+Mixed practice: --system takes several systems separated by commas, or "all".
+Their topics are pooled, and the case file never names the system.
+             python pick_case.py common --system cardio,gi,pulm
+
+Every command also takes --json, which prints one JSON object instead of text.
+The Cases page of the Rounds tools plugin in LearnHarness uses it.
+
 Each case rolls an encounter type (ED, ward, handover, clinic...) and a set of
 extras (full history and exam, exam sign, ethics, exam-style questions, ECG)
 using the percentages in scenarios.json. Edit that file to change the mix.
@@ -91,6 +98,14 @@ DEFAULT_SCENARIOS = {
 
 # ---------- shared ----------
 
+NOTES = []  # side notes for the learner; also returned under "notes" with --json
+
+
+def note(msg: str) -> None:
+    NOTES.append(msg.strip())
+    print(msg)
+
+
 def load_topics(system: str) -> dict:
     path = BASE / "topics" / f"{system}.json"
     if not path.exists():
@@ -98,10 +113,67 @@ def load_topics(system: str) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def all_systems() -> list:
+    return sorted(p.stem for p in (BASE / "topics").glob("*.json"))
+
+
+def parse_systems(value) -> list:
+    """'cardio' or 'cardio,gi,pulm' or 'all' -> list of system names, each with a topic list."""
+    if not value:
+        return []
+    names = [s.strip() for s in value.split(",") if s.strip()]
+    if "all" in names:
+        names = all_systems()
+    names = list(dict.fromkeys(names))
+    if not names:
+        sys.exit("Give at least one system, e.g. --system cardio (there are no topic lists in topics/).")
+    for s in names:
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", s):
+            sys.exit(f"'{s}' is not a system name. Use the file names in topics/ without .json, separated by commas.")
+        load_topics(s)  # exits with a clear message if the list is missing
+    return names
+
+
+def load_pool(systems: list) -> list:
+    """Topics of all the systems in one list. Each topic gets '_system' and '_key' (system/id);
+    ids may repeat between systems, so everything in progress.json is keyed by '_key'."""
+    pool = []
+    for system in systems:
+        for t in load_topics(system)["topics"]:
+            pool.append({**t, "_system": system, "_key": f"{system}/{t['id']}"})
+    return pool
+
+
+LEGACY_SYSTEM = "cardio"  # progress.json written before mixed systems used bare topic ids, all cardio
+
+
+def migrate_progress(p: dict) -> bool:
+    """Re-key bare topic ids as system/id. Returns True if anything changed."""
+    changed = False
+    built = p.get("built", {})
+    for k in [k for k in built if "/" not in k]:
+        new = f"{LEGACY_SYSTEM}/{k}"
+        built[new] = built.get(new, 0) + built.pop(k)
+        changed = True
+    for meta in p.get("cases", {}).values():
+        t = meta.get("topic")
+        if t and "/" not in t:
+            meta["topic"] = f"{meta.get('system') or LEGACY_SYSTEM}/{t}"
+            changed = True
+    return changed
+
+
 def load_progress() -> dict:
-    if PROGRESS.exists():
-        return json.loads(PROGRESS.read_text(encoding="utf-8"))
-    return {"built": {}, "reports": []}
+    if not PROGRESS.exists():
+        return {"built": {}, "reports": []}
+    raw = PROGRESS.read_text(encoding="utf-8")
+    p = json.loads(raw)
+    if migrate_progress(p):
+        backup = PROGRESS.with_name(PROGRESS.name + ".bak")
+        if not backup.exists():
+            backup.write_text(raw, encoding="utf-8")
+        save_progress(p)
+    return p
 
 
 def save_progress(p: dict) -> None:
@@ -139,14 +211,18 @@ def copy_to_clipboard(text: str) -> bool:
         return False
 
 
-def finish(paths: list, clip: bool) -> None:
+def finish(paths: list, clip: bool) -> dict:
+    """Copies the opening message if asked. Returns the fields --json reports for new cases."""
+    out = {"cases": [str(p) for p in paths], "message": opening_message(paths) if paths else "", "copied": False}
     if not clip or not paths:
-        return
-    msg = opening_message(paths)
+        return out
+    msg = out["message"]
     if copy_to_clipboard(msg):
+        out["copied"] = True
         print("\nCopied the opening message. Start a Practice session in LearnHarness and paste it.")
     else:
         print("\nCouldn't reach the clipboard. Paste this into a Practice session:\n\n" + msg)
+    return out
 
 
 def guideline_path(system: str, topic: dict) -> Path:
@@ -260,30 +336,45 @@ def cmd_prepare(args, rng):
         import pymupdf4llm  # noqa: F401
     except ImportError:
         sys.exit("Needs PyMuPDF. Run: python -m pip install pymupdf pymupdf4llm")
-    folder = BASE / "guidelines" / args.system
-    pdfs = sorted(folder.glob("*.pdf")) if folder.exists() else []
-    if not pdfs:
-        sys.exit(f"No PDFs in {folder}")
+    several = len(args.systems) > 1
     done = 0
-    for pdf in pdfs:
-        md = pdf.with_suffix(".md")
-        if md.exists() and md.stat().st_mtime >= pdf.stat().st_mtime and not args.force:
-            print(f"  {pdf.name}: already converted")
+    files = []
+    for system in args.systems:
+        folder = BASE / "guidelines" / system
+        pdfs = sorted(folder.glob("*.pdf")) if folder.exists() else []
+        if not pdfs:
+            if not several:
+                sys.exit(f"No PDFs in {folder}")
+            note(f"{system}: no PDFs in {folder}")
             continue
-        try:
-            r = convert_guideline(pdf, md)
-        except Exception as e:
-            print(f"  {pdf.name}: FAILED ({type(e).__name__}: {e}). Cases will use the PDF instead.")
-            continue
-        done += 1
-        msg = f"  {pdf.name}: {r['pages']} pages, {r['words']:,} words, {r['headings']} sections indexed"
-        if r["headings"] < 5:
-            msg += "  <- few headings found, the contents list will be thin"
-        if r["weak"]:
-            shown = ", ".join(map(str, r["weak"][:12])) + (" ..." if len(r["weak"]) > 12 else "")
-            msg += f"\n      little or no text on pages {shown} (usually figures or algorithm charts; normal in small numbers)"
-        print(msg)
+        if several:
+            print(f"{system}:")
+        for pdf in pdfs:
+            md = pdf.with_suffix(".md")
+            entry = {"system": system, "file": pdf.name}
+            files.append(entry)
+            if md.exists() and md.stat().st_mtime >= pdf.stat().st_mtime and not args.force:
+                entry["state"] = "already_converted"
+                print(f"  {pdf.name}: already converted")
+                continue
+            try:
+                r = convert_guideline(pdf, md)
+            except Exception as e:
+                entry.update(state="failed", error=f"{type(e).__name__}: {e}")
+                print(f"  {pdf.name}: FAILED ({type(e).__name__}: {e}). Cases will use the PDF instead.")
+                continue
+            done += 1
+            entry.update(state="converted", pages=r["pages"], words=r["words"], sections=r["headings"],
+                         thin_pages=r["weak"])
+            msg = f"  {pdf.name}: {r['pages']} pages, {r['words']:,} words, {r['headings']} sections indexed"
+            if r["headings"] < 5:
+                msg += "  <- few headings found, the contents list will be thin"
+            if r["weak"]:
+                shown = ", ".join(map(str, r["weak"][:12])) + (" ..." if len(r["weak"]) > 12 else "")
+                msg += f"\n      little or no text on pages {shown} (usually figures or algorithm charts; normal in small numbers)"
+            print(msg)
     print(f"\nConverted {done} file(s). Spot-check one: open a .md in Notepad and skim a page or two.")
+    return {"converted": done, "files": files}
 
 
 # ---------- scenario settings ----------
@@ -291,7 +382,7 @@ def cmd_prepare(args, rng):
 def load_scenarios() -> dict:
     if not SCENARIOS.exists():
         SCENARIOS.write_text(json.dumps(DEFAULT_SCENARIOS, indent=2), encoding="utf-8")
-        print(f"Created {SCENARIOS.name} with default percentages; edit it to change the mix.")
+        note(f"Created {SCENARIOS.name} with default percentages; edit it to change the mix.")
     try:
         s = json.loads(SCENARIOS.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
@@ -484,7 +575,7 @@ def attach_ecg(topic: dict, dest: Path, rng: random.Random, progress: dict):
         import numpy  # noqa: F401
         import matplotlib  # noqa: F401
     except ImportError:
-        print("Note: ECGs skipped. Run 'python -m pip install numpy matplotlib' to enable them.")
+        note("Note: ECGs skipped. Run 'python -m pip install numpy matplotlib' to enable them.")
         return None, None
     used = set(progress.setdefault("ecgs", []))
     lo, hi = topic.get("ecg_rate", [None, None]) if isinstance(topic.get("ecg_rate"), list) else (None, None)
@@ -504,7 +595,7 @@ def attach_ecg(topic: dict, dest: Path, rng: random.Random, progress: dict):
         png = dest.with_name(dest.stem + "_ecg.png")
         render_ecg(rec["filename_hr"], png)
     except Exception as e:
-        print(f"Note: ECG skipped for one case ({type(e).__name__}: {e}).")
+        note(f"Note: ECG skipped for one case ({type(e).__name__}: {e}).")
         return None, None
     progress["ecgs"].append(rec["ecg_id"])
     labels = [f"{scp.get(c, c)} ({c}{'' if lik == 0 else f', {lik:.0f}%'})" for c, lik in rec["codes"].items()]
@@ -571,32 +662,33 @@ def pick_topics(topics: list, built: dict, n: int, rng: random.Random, hist: dic
     rng.shuffle(pool)
 
     def key(t):
-        h = hist.get(t["id"], {})
+        h = hist.get(t["_key"], {})
         score, last = h.get("last_score"), h.get("last_built")
         due = last is None or (now - last).total_seconds() >= review["after_days"] * 86400
         unseen_rank, weak_rank = (0, 1) if review.get("order", "unseen_first") == "unseen_first" else (1, 0)
-        if built.get(t["id"], 0) == 0:
+        if built.get(t["_key"], 0) == 0:
             return (unseen_rank, 0.0, 0)
         if score is not None and score < review["weak_below"] and due:
             return (weak_rank, score, 0)
-        return (2, 0.0, built.get(t["id"], 0))
+        return (2, 0.0, built.get(t["_key"], 0))
 
     pool.sort(key=key)
     return pool[:n]
 
 
 def cmd_common(args, rng):
-    data = load_topics(args.system)
+    topics = load_pool(args.systems)
     scenarios = load_scenarios()
     progress = load_progress()
     built = progress.setdefault("built", {})
     enc_counts = progress.setdefault("encounters", {})
     hist = topic_history(progress, read_log())
-    chosen = pick_topics(data["topics"], built, args.batch, rng, hist, scenarios["review"])
+    chosen = pick_topics(topics, built, args.batch, rng, hist, scenarios["review"])
     missing = unconverted = 0
     made = []
+    with_ecg = []
     for topic in chosen:
-        gpath = guideline_path(args.system, topic)
+        gpath = guideline_path(topic["_system"], topic)
         sc = roll_scenario(scenarios, rng)
         dest = new_case_path()
         ref, ref_state = guideline_reference(gpath, dest)
@@ -627,23 +719,26 @@ def cmd_common(args, rng):
             "patient would show it. Grade all management against the current guideline.\n",
             encoding="utf-8",
         )
-        built[topic["id"]] = built.get(topic["id"], 0) + 1
+        built[topic["_key"]] = built.get(topic["_key"], 0) + 1
         progress.setdefault("cases", {})[dest.stem] = {
-            "system": args.system, "topic": topic["id"], "encounter": sc["encounter"],
+            "system": topic["_system"], "topic": topic["_key"], "encounter": sc["encounter"],
             "made": datetime.now().isoformat(timespec="seconds"),
         }
         enc_counts[sc["encounter"]] = enc_counts.get(sc["encounter"], 0) + 1
         save_progress(progress)
         print(f"Saved {dest.relative_to(BASE)}" + ("  (+ ECG)" if ecg_block else ""))
         made.append(dest)
+        with_ecg.append(bool(ecg_block))
         time.sleep(1.1)  # keeps timestamps in file names distinct and in order
     if missing:
-        print(f"Note: {missing} of these cases have no guideline PDF saved yet. "
-              f"Run 'status --system {args.system}' to see which files are missing.")
+        note(f"Note: {missing} of these cases have no guideline PDF saved yet. "
+             f"Run 'status --system {args.system}' to see which files are missing.")
     if unconverted:
-        print(f"Note: {unconverted} of these cases point at a PDF that hasn't been converted to text. "
-              "Run 'Prepare guidelines' first to make them cheaper.")
-    finish(made, args.clip)
+        note(f"Note: {unconverted} of these cases point at a PDF that hasn't been converted to text. "
+             "Run 'Prepare guidelines' first to make them cheaper.")
+    out = finish(made, args.clip)
+    out["with_ecg"] = sum(with_ecg)
+    return out
 
 
 # ---------- report: Europe PMC case reports ----------
@@ -764,12 +859,15 @@ def cmd_report(args, rng):
     progress = load_progress()
     scenarios = load_scenarios()
     used = set(progress.setdefault("reports", []))
-    preset = load_topics(args.system)["complaints"] if args.system else []
+    presets = {s: load_topics(s).get("complaints", []) for s in args.systems}
     y0, y1 = (int(x) for x in args.years.split("-"))
     saved = 0
     made = []
     for _ in range(args.batch):
-        # With a system preset and no --complaint, each case gets a fresh random complaint.
+        # With several systems, each case draws its system first. With a system preset and no
+        # --complaint, each case gets a fresh random complaint.
+        system = (args.systems[0] if len(args.systems) == 1 else rng.choice(args.systems)) if args.systems else ""
+        preset = presets.get(system, [])
         complaints = args.complaint or ([rng.choice(preset)] if preset else [])
         years = list(range(y0, y1 + 1))
         rng.shuffle(years)
@@ -795,7 +893,7 @@ def cmd_report(args, rng):
                 used.add(pmcid)
                 progress["reports"].append(pmcid)
                 progress.setdefault("cases", {})[dest.stem] = {
-                    "system": args.system or "", "report": pmcid, "made": datetime.now().isoformat(timespec="seconds"),
+                    "system": system, "report": pmcid, "made": datetime.now().isoformat(timespec="seconds"),
                 }
                 save_progress(progress)
                 print(f"Saved {dest.relative_to(BASE)} (case section: {words} words)")
@@ -807,13 +905,13 @@ def cmd_report(args, rng):
             if done or tries >= 40:
                 break
         if not done:
-            print("One case could not be found with these filters; skipped.")
+            note("One case could not be found with these filters; skipped.")
     if not saved:
         sys.exit("No usable case found. Loosen the filters or widen --years.")
-    finish(made, args.clip)
+    return finish(made, args.clip)
 
 
-# ---------- status ----------
+# ---------- review ----------
 
 def cmd_review(args, rng):
     progress = load_progress()
@@ -822,28 +920,30 @@ def cmd_review(args, rng):
     names = {}
     for sysname in {m.get("system") for m in index.values() if m.get("system")}:
         try:
-            names.update({t["id"]: t["topic"] for t in load_topics(sysname)["topics"]})
+            names.update({f"{sysname}/{t['id']}": t["topic"] for t in load_topics(sysname)["topics"]})
         except SystemExit:
             pass
     rows = []
     for case_id, e in log.items():
         meta = index.get(case_id, {})
-        if args.system and meta.get("system") and meta["system"] != args.system:
+        if args.systems and meta.get("system") and meta["system"] not in args.systems:
             continue
         label = names.get(meta.get("topic"), "Case report" if meta.get("report") else meta.get("topic", "Unknown"))
         rows.append((e.get("logged", ""), label, e))
     if not rows:
         print("No finished cases logged yet. Cases are logged at the end of each practice session.")
-        return
+        return {"finished": 0, "topics": [], "weak_spots": [], "recent": []}
     rows.sort(key=lambda r: r[0], reverse=True)
 
     by_topic = {}
     for _, label, e in rows:
         by_topic.setdefault(label, []).append(e.get("score", 0))
+    ranked = sorted(by_topic.items(), key=lambda kv: sum(kv[1]) / len(kv[1]))
     lines = ["# Case review", "", f"{len(rows)} finished cases logged.", "", "## By topic (weakest first)", ""]
-    for label, scores in sorted(by_topic.items(), key=lambda kv: sum(kv[1]) / len(kv[1])):
+    for label, scores in ranked:
         lines.append(f"- {label}: {len(scores)} case(s), last {scores[0]:.0%}, average {sum(scores) / len(scores):.0%}")
     lines += ["", "## Weak spots, most recent first", ""]
+    weak_spots = []
     for when, label, e in rows[: args.last]:
         spots = e.get("weak_spots") or []
         if not spots:
@@ -851,53 +951,111 @@ def cmd_review(args, rng):
         lines.append(f"### {when[:10]} · {label} · {e.get('diagnosis', '')} · {e.get('score', 0):.0%}")
         lines += [f"- {w}" for w in spots]
         lines.append("")
+        weak_spots.append({"date": when[:10], "topic": label, "diagnosis": e.get("diagnosis", ""),
+                           "score": e.get("score", 0), "spots": spots})
     out = BASE / "review.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines[: 6 + len(by_topic)]))
     print(f"\nFull list of weak spots written to {out.name} (open it in Notepad).")
+    # Only finished cases appear here, so naming their topic and diagnosis spoils nothing.
+    return {
+        "finished": len(rows),
+        "topics": [{"topic": label, "cases": len(s), "last": s[0], "average": sum(s) / len(s)} for label, s in ranked],
+        "weak_spots": weak_spots,
+        "recent": [{"date": when[:10], "topic": label, "diagnosis": e.get("diagnosis", ""), "score": e.get("score", 0)}
+                   for when, label, e in rows[: args.last]],
+    }
+
+
+# ---------- status ----------
+
+def system_status(system: str, built: dict, show_topics: bool) -> dict:
+    topics = load_topics(system)["topics"]
+    prefix = f"{system}/"
+
+    def count(t):
+        return built.get(prefix + t["id"], 0)
+
+    done = [t for t in topics if count(t) > 0]
+    missing = {}
+    for t in topics:
+        if not guideline_path(system, t).exists():
+            missing.setdefault(t["guideline_file"], t["guideline"])
+    unconverted = sorted({t["guideline_file"] for t in topics
+                          if guideline_path(system, t).exists()
+                          and not guideline_path(system, t).with_suffix(".md").exists()})
+    folder = BASE / "guidelines" / system
+    expected = {t["guideline_file"].lower() for t in topics}
+    strays = sorted(p.name for p in folder.glob("*.pdf") if p.name.lower() not in expected) if folder.exists() else []
+    out = {
+        "system": system,
+        "topics_total": len(topics),
+        "topics_covered": len(done),
+        "built": sum(v for k, v in built.items() if k.startswith(prefix)),
+        "missing": [{"file": f, "guideline": g} for f, g in missing.items()],
+        "unconverted": unconverted,
+        "strays": strays,
+    }
+    if show_topics:
+        # Counts a case as covered when it is picked, so this also names cases you haven't run yet.
+        out["topics"] = [{"topic": t["topic"], "count": count(t)} for t in sorted(done, key=lambda t: -count(t))]
+    return out
 
 
 def cmd_status(args, rng):
-    data = load_topics(args.system)
     progress = load_progress()
     built = progress.get("built", {})
-    topics = data["topics"]
-    done = [t for t in topics if built.get(t["id"], 0) > 0]
-    print(f"{args.system}: {len(done)} of {len(topics)} topics picked at least once, "
-          f"{sum(built.values())} built cases in total")
-    if args.show_topics:
-        # Counts a case as covered when it is picked, so this also names cases you haven't run yet.
-        for t in sorted(done, key=lambda t: -built[t["id"]]):
-            print(f"  {built[t['id']]}x  {t['topic']}")
-    else:
-        print("  (add --show-topics to list them; this names any picked cases you haven't run yet)")
+    systems = [system_status(s, built, args.show_topics) for s in args.systems]
+    single = len(systems) == 1
+    hint = "  (add --show-topics to list them; this names any picked cases you haven't run yet)"
+    for s in systems:
+        print(f"{s['system']}: {s['topics_covered']} of {s['topics_total']} topics picked at least once, "
+              f"{s['built']} built cases in total")
+        if args.show_topics:
+            for t in s["topics"]:
+                print(f"  {t['count']}x  {t['topic']}")
+        elif single:
+            print(hint)
+    if not single:
+        print(f"All {len(systems)} systems: {sum(s['topics_covered'] for s in systems)} of "
+              f"{sum(s['topics_total'] for s in systems)} topics picked at least once, "
+              f"{sum(s['built'] for s in systems)} built cases in total")
+        if not args.show_topics:
+            print(hint)
     print(f"Case reports used: {len(progress.get('reports', []))}")
     print(f"ECGs used: {len(progress.get('ecgs', []))}")
     enc = progress.get("encounters", {})
+    ranked = sorted(enc.items(), key=lambda kv: -kv[1])
     if enc:
         total = sum(enc.values())
         print("Encounter mix so far: " + ", ".join(
-            f"{encounter_label(k)} {v} ({100 * v / total:.0f}%)" for k, v in sorted(enc.items(), key=lambda kv: -kv[1])))
-    missing = {}
-    for t in topics:
-        if not guideline_path(args.system, t).exists():
-            missing.setdefault(t["guideline_file"], t["guideline"])
-    if missing:
-        print(f"\nGuideline PDFs missing from guidelines/{args.system}/:")
-        for fname, name in missing.items():
-            print(f"  {fname:24} {name}")
-    else:
-        print("\nAll guideline PDFs are in place.")
-    unconverted = sorted({t["guideline_file"] for t in topics
-                          if guideline_path(args.system, t).exists()
-                          and not guideline_path(args.system, t).with_suffix(".md").exists()})
-    if unconverted:
-        print("Not yet converted to text (run Prepare guidelines): " + ", ".join(unconverted))
-    folder = BASE / "guidelines" / args.system
-    expected = {t["guideline_file"].lower() for t in topics}
-    strays = sorted(p.name for p in folder.glob("*.pdf") if p.name.lower() not in expected) if folder.exists() else []
-    if strays:
-        print("PDFs with names the topic list doesn't use (rename them?): " + ", ".join(strays))
+            f"{encounter_label(k)} {v} ({100 * v / total:.0f}%)" for k, v in ranked))
+    for s in systems:
+        name = s["system"]
+        if s["missing"]:
+            print(f"\nGuideline PDFs missing from guidelines/{name}/:")
+            for m in s["missing"]:
+                print(f"  {m['file']:24} {m['guideline']}")
+        else:
+            print("\nAll guideline PDFs are in place." if single else f"\n{name}: all guideline PDFs are in place.")
+        tag = "" if single else f"{name}: "
+        if s["unconverted"]:
+            print(f"{tag}Not yet converted to text (run Prepare guidelines): " + ", ".join(s["unconverted"]))
+        if s["strays"]:
+            print(f"{tag}PDFs with names the topic list doesn't use (rename them?): " + ", ".join(s["strays"]))
+    index = progress.get("cases", {})
+    log = read_log()
+    return {
+        "systems": systems,
+        "topics_total": sum(s["topics_total"] for s in systems),
+        "topics_covered": sum(s["topics_covered"] for s in systems),
+        "built": sum(s["built"] for s in systems),
+        "reports_used": len(progress.get("reports", [])),
+        "ecgs_used": len(progress.get("ecgs", [])),
+        "encounters": [{"key": k, "label": encounter_label(k), "count": v} for k, v in ranked],
+        "cases_finished": len(log),
+        "cases_waiting": sum(1 for c in index if c not in log),
+    }
 
 
 # ---------- main ----------
@@ -906,14 +1064,18 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seed", type=int, help="random seed, for repeatable picks")
     sub = ap.add_subparsers(dest="cmd", required=True)
+    several = "; several separated by commas (cardio,gi,pulm) pool their topics"
+    as_json = "print one JSON object instead of text (used by the Cases page in LearnHarness)"
 
     c = sub.add_parser("common", help="seed a typical case of a core topic")
-    c.add_argument("--system", required=True, help="topic list in topics/, e.g. cardio")
+    c.add_argument("--system", required=True, help="topic list in topics/, e.g. cardio" + several + ", or all")
     c.add_argument("--batch", type=int, default=1)
     c.add_argument("--clip", action="store_true", help="copy the opening message to the clipboard")
+    c.add_argument("--json", action="store_true", help=as_json)
 
     r = sub.add_parser("report", help="fetch a real case report from Europe PMC")
-    r.add_argument("--system", help="use this system's complaint list, e.g. cardio")
+    r.add_argument("--system", help="use this system's complaint list, e.g. cardio; several separated by commas "
+                                    "draw a system per case")
     r.add_argument("--complaint", nargs="+", default=[], help="keywords searched in the abstract")
     r.add_argument("--topic", nargs="+", default=[], help="keywords in the title (tells you the diagnosis)")
     r.add_argument("--ed", action="store_true", help="only reports mentioning the emergency department")
@@ -923,22 +1085,54 @@ def main():
     r.add_argument("--min-words", type=int, default=200)
     r.add_argument("--batch", type=int, default=1)
     r.add_argument("--clip", action="store_true", help="copy the opening message to the clipboard")
+    r.add_argument("--json", action="store_true", help=as_json)
 
     pr = sub.add_parser("prepare", help="convert guideline PDFs to searchable text (once)")
-    pr.add_argument("--system", required=True)
+    pr.add_argument("--system", required=True, help="e.g. cardio; several separated by commas, or all")
     pr.add_argument("--force", action="store_true", help="reconvert even if already done")
+    pr.add_argument("--json", action="store_true", help=as_json)
 
     rv = sub.add_parser("review", help="weak topics and weak spots from finished cases")
-    rv.add_argument("--system", help="only this system's cases")
+    rv.add_argument("--system", help="only these systems' cases (one, or several separated by commas); default all")
     rv.add_argument("--last", type=int, default=40, help="how many recent cases to list weak spots for")
+    rv.add_argument("--json", action="store_true", help=as_json)
 
     s = sub.add_parser("status", help="coverage and missing guideline PDFs")
-    s.add_argument("--system", required=True)
+    s.add_argument("--system", default="all", help="one system, several separated by commas, or all (default)")
     s.add_argument("--show-topics", action="store_true", help="list covered topics (can spoil unrun cases)")
+    s.add_argument("--json", action="store_true", help=as_json)
 
     args = ap.parse_args()
     rng = random.Random(args.seed)
-    {"common": cmd_common, "report": cmd_report, "status": cmd_status, "prepare": cmd_prepare, "review": cmd_review}[args.cmd](args, rng)
+    handler = {"common": cmd_common, "report": cmd_report, "status": cmd_status, "prepare": cmd_prepare,
+               "review": cmd_review}[args.cmd]
+
+    if not args.json:
+        args.systems = parse_systems(args.system)
+        handler(args, rng)
+        return
+
+    # --json: stdout carries exactly one JSON object. Whatever the command prints is returned in
+    # "text"; a failure is {"ok": false, "error": ...} with exit code 1.
+    import contextlib
+    import io
+    buf = io.StringIO()
+    code = 0
+    try:
+        with contextlib.redirect_stdout(buf):
+            args.systems = parse_systems(args.system)
+            out = {"ok": True, **(handler(args, rng) or {})}
+    except SystemExit as e:
+        if e.code in (None, 0):
+            out = {"ok": True}
+        else:
+            out, code = {"ok": False, "error": str(e.code)}, 1
+    except Exception as e:
+        out, code = {"ok": False, "error": f"{type(e).__name__}: {e}"}, 1
+    out["notes"] = NOTES
+    out["text"] = buf.getvalue()
+    print(json.dumps(out))
+    sys.exit(code)
 
 
 if __name__ == "__main__":
