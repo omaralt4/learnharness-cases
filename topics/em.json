@@ -1,0 +1,1884 @@
+{
+ "system": "em",
+ "step2_system": "multisystem",
+ "note": "Complaint-based EM topics. Handbook chapter files are UK practice (region UK): grade to US practice where they differ. US-region references are verified current Nov 2026; topics with none rely on the handbook plus model knowledge, flagged at conclusion. Topics that also exist in another system file use the same id (e.g. stemi, pe): when several files are pooled the topic counts once, its references are merged, and its history is shared. 'folder' on a reference means the file lives in that system's guideline folder. tier: common / cant_miss / rare (weights in scenarios.json). step2_system buckets each topic for mixed mode. Edit freely.",
+ "complaints": [
+  "abdominal pain",
+  "headache",
+  "shortness of breath",
+  "overdose",
+  "trauma",
+  "fever",
+  "confusion",
+  "seizure",
+  "back pain",
+  "limb injury",
+  "red eye",
+  "vaginal bleeding",
+  "unwell child"
+ ],
+ "topics": [
+  {
+   "id": "anaphylaxis",
+   "topic": "Anaphylaxis",
+   "tier": "cant_miss",
+   "complaint": "rash and difficulty breathing",
+   "step2_system": "blood_immune",
+   "references": [
+    {
+     "file": "em-handbook-02-life-threatening-emergencies.md",
+     "name": "EM handbook ch 2",
+     "region": "UK"
+    },
+    {
+     "file": "anaphylaxis-2023.pdf",
+     "name": "Anaphylaxis: A 2023 Practice Parameter Update (AAAAI/ACAAI JTFPP)",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "sepsis",
+   "topic": "Sepsis and septic shock",
+   "tier": "common",
+   "complaint": "fever and hypotension",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-02-life-threatening-emergencies.md",
+     "name": "EM handbook ch 2",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-05-infectious-diseases.md",
+     "name": "EM handbook ch 5",
+     "region": "UK"
+    },
+    {
+     "file": "sepsis-2026.pdf",
+     "name": "Surviving Sepsis Campaign: International Guidelines for Management of Sepsis and Septic Shock 2026 (Crit Care Med 2026;54:725-812)",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "severe_asthma",
+   "topic": "Acute severe asthma",
+   "tier": "common",
+   "complaint": "wheeze and shortness of breath",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "copd_exacerbation",
+   "topic": "COPD exacerbation",
+   "tier": "common",
+   "complaint": "worsening breathlessness",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "pneumonia",
+   "topic": "Community-acquired pneumonia",
+   "tier": "common",
+   "complaint": "cough and fever",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-05-infectious-diseases.md",
+     "name": "EM handbook ch 5",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "pneumothorax",
+   "topic": "Spontaneous pneumothorax",
+   "tier": "cant_miss",
+   "complaint": "sudden pleuritic chest pain",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "pe",
+   "topic": "Pulmonary embolism",
+   "tier": "cant_miss",
+   "complaint": "pleuritic chest pain and breathlessness",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    },
+    {
+     "file": "pe-2026.pdf",
+     "name": "2026 AHA/ACC/ACCP/ACEP/CHEST/SCAI/SHM/SIR/SVM/SVN Guideline for the Evaluation and Management of Acute Pulmonary Embolism in Adults",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "upper_gi_bleed",
+   "topic": "Upper GI bleed",
+   "tier": "common",
+   "complaint": "vomiting blood or melaena",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "lower_gi_bleed",
+   "topic": "Lower GI bleed",
+   "tier": "common",
+   "complaint": "rectal bleeding",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "dka",
+   "topic": "Diabetic ketoacidosis",
+   "tier": "common",
+   "complaint": "vomiting, abdominal pain, polyuria",
+   "step2_system": "endocrine",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    },
+    {
+     "file": "dka-2024.pdf",
+     "name": "Hyperglycemic Crises in Adults With Diabetes: A Consensus Report (ADA/EASD/JBDS/AACE/DTS, Diabetes Care 2024;47:1257-1275)",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "hhs",
+   "topic": "Hyperosmolar hyperglycaemic state",
+   "tier": "cant_miss",
+   "complaint": "confusion in an older diabetic",
+   "step2_system": "endocrine",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    },
+    {
+     "file": "dka-2024.pdf",
+     "name": "Hyperglycemic Crises in Adults With Diabetes: A Consensus Report (ADA/EASD/JBDS/AACE/DTS, Diabetes Care 2024;47:1257-1275)",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "hypoglycaemia",
+   "topic": "Hypoglycaemia",
+   "tier": "common",
+   "complaint": "found confused or unresponsive",
+   "step2_system": "endocrine",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "adrenal_crisis",
+   "topic": "Adrenal crisis",
+   "tier": "rare",
+   "complaint": "hypotension and vomiting",
+   "step2_system": "endocrine",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "thyroid_emergency",
+   "topic": "Thyroid storm / myxoedema coma",
+   "tier": "rare",
+   "complaint": "agitation and fever, or hypothermia and drowsiness",
+   "step2_system": "endocrine",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "hyperkalaemia",
+   "topic": "Hyperkalaemia",
+   "tier": "cant_miss",
+   "complaint": "weakness, abnormal bloods",
+   "step2_system": "renal_reproductive",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "hyponatraemia",
+   "topic": "Hyponatraemia",
+   "tier": "common",
+   "complaint": "confusion or seizure",
+   "step2_system": "renal_reproductive",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "aki",
+   "topic": "Acute kidney injury",
+   "tier": "common",
+   "complaint": "reduced urine output, abnormal bloods",
+   "step2_system": "renal_reproductive",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "sah",
+   "topic": "Subarachnoid haemorrhage",
+   "tier": "cant_miss",
+   "complaint": "sudden severe headache",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    },
+    {
+     "file": "sah-2023.pdf",
+     "name": "2023 AHA/ASA Guideline for the Management of Patients With Aneurysmal Subarachnoid Hemorrhage",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "headache_benign",
+   "topic": "Headache (migraine and benign causes)",
+   "tier": "common",
+   "complaint": "headache",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "ischaemic_stroke",
+   "topic": "Acute ischaemic stroke / TIA",
+   "tier": "cant_miss",
+   "complaint": "sudden weakness or speech disturbance",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    },
+    {
+     "file": "stroke-2026.pdf",
+     "name": "2026 AHA/ASA Guideline for the Early Management of Patients With Acute Ischemic Stroke",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "seizure",
+   "topic": "First seizure / status epilepticus",
+   "tier": "common",
+   "complaint": "fit",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "meningitis",
+   "topic": "Bacterial meningitis / encephalitis",
+   "tier": "cant_miss",
+   "complaint": "fever, headache, neck stiffness",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-05-infectious-diseases.md",
+     "name": "EM handbook ch 5",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "delirium",
+   "topic": "Acute confusion in an older adult",
+   "tier": "common",
+   "complaint": "confusion",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "vertigo",
+   "topic": "Acute vertigo (peripheral vs central)",
+   "tier": "common",
+   "complaint": "dizziness",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-12-ear-nose-and-throat.md",
+     "name": "EM handbook ch 12",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "weakness_gbs",
+   "topic": "Acute flaccid weakness (Guillain-Barré)",
+   "tier": "rare",
+   "complaint": "ascending weakness",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "cauda_equina",
+   "topic": "Cauda equina / cord compression",
+   "tier": "cant_miss",
+   "complaint": "back pain with leg weakness or retention",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook ch 3",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "back_pain",
+   "topic": "Back pain with red flags",
+   "tier": "common",
+   "complaint": "back pain",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "paracetamol_od",
+   "topic": "Paracetamol (acetaminophen) overdose",
+   "tier": "common",
+   "complaint": "took tablets",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-04-toxicology.md",
+     "name": "EM handbook ch 4",
+     "region": "UK"
+    },
+    {
+     "file": "apap-2023.pdf",
+     "name": "Management of Acetaminophen Poisoning in the US and Canada: A Consensus Statement (JAMA Netw Open 2023)",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "salicylate_od",
+   "topic": "Salicylate overdose",
+   "tier": "cant_miss",
+   "complaint": "tinnitus, vomiting, fast breathing",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-04-toxicology.md",
+     "name": "EM handbook ch 4",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "tca_od",
+   "topic": "Tricyclic antidepressant overdose",
+   "tier": "cant_miss",
+   "complaint": "drowsy after overdose",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-04-toxicology.md",
+     "name": "EM handbook ch 4",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "opioid_od",
+   "topic": "Opioid toxicity",
+   "tier": "common",
+   "complaint": "found unresponsive",
+   "step2_system": "behavioral",
+   "references": [
+    {
+     "file": "em-handbook-04-toxicology.md",
+     "name": "EM handbook ch 4",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "alcohol_withdrawal",
+   "topic": "Alcohol withdrawal",
+   "tier": "common",
+   "complaint": "tremor and agitation",
+   "step2_system": "behavioral",
+   "references": [
+    {
+     "file": "em-handbook-04-toxicology.md",
+     "name": "EM handbook ch 4",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-14-psychiatry.md",
+     "name": "EM handbook ch 14",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "toxic_alcohols",
+   "topic": "Toxic alcohol ingestion",
+   "tier": "rare",
+   "complaint": "drunk with a high anion gap",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-04-toxicology.md",
+     "name": "EM handbook ch 4",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "co_poisoning",
+   "topic": "Carbon monoxide poisoning",
+   "tier": "cant_miss",
+   "complaint": "headache in several household members",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-04-toxicology.md",
+     "name": "EM handbook ch 4",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-06-environmental-emergencies.md",
+     "name": "EM handbook ch 6",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "bb_ccb_od",
+   "topic": "Beta-blocker / calcium-channel blocker overdose",
+   "tier": "rare",
+   "complaint": "bradycardia and hypotension after overdose",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-04-toxicology.md",
+     "name": "EM handbook ch 4",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "serotonin_nms",
+   "topic": "Serotonin syndrome / NMS / sympathomimetic toxicity",
+   "tier": "rare",
+   "complaint": "agitation, fever, rigidity",
+   "step2_system": "behavioral",
+   "references": [
+    {
+     "file": "em-handbook-04-toxicology.md",
+     "name": "EM handbook ch 4",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "cellulitis_nec_fasc",
+   "topic": "Cellulitis vs necrotising fasciitis",
+   "tier": "common",
+   "complaint": "red painful limb",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-05-infectious-diseases.md",
+     "name": "EM handbook ch 5",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "uti_pyelo",
+   "topic": "Pyelonephritis / urosepsis",
+   "tier": "common",
+   "complaint": "fever and flank pain",
+   "step2_system": "renal_reproductive",
+   "references": [
+    {
+     "file": "em-handbook-05-infectious-diseases.md",
+     "name": "EM handbook ch 5",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "returning_traveller",
+   "topic": "Fever in the returning traveller",
+   "tier": "rare",
+   "complaint": "fever after travel",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-05-infectious-diseases.md",
+     "name": "EM handbook ch 5",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "heat_illness",
+   "topic": "Heat stroke",
+   "tier": "cant_miss",
+   "complaint": "collapse in the heat",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-06-environmental-emergencies.md",
+     "name": "EM handbook ch 6",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "hypothermia",
+   "topic": "Hypothermia",
+   "tier": "rare",
+   "complaint": "found cold",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-06-environmental-emergencies.md",
+     "name": "EM handbook ch 6",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "major_trauma",
+   "topic": "Polytrauma: primary survey",
+   "tier": "common",
+   "complaint": "high-speed RTC",
+   "step2_system": "multisystem",
+   "references": [
+    {
+     "file": "em-handbook-08-major-trauma.md",
+     "name": "EM handbook ch 8",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "head_injury",
+   "topic": "Head injury",
+   "tier": "common",
+   "complaint": "fall with head strike",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-08-major-trauma.md",
+     "name": "EM handbook ch 8",
+     "region": "UK"
+    },
+    {
+     "file": "mtbi-2023.pdf",
+     "name": "2023 ACEP Clinical Policy: Adult Patients Presenting to the ED With Mild Traumatic Brain Injury",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "c_spine",
+   "topic": "Cervical spine injury",
+   "tier": "cant_miss",
+   "complaint": "neck pain after trauma",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-08-major-trauma.md",
+     "name": "EM handbook ch 8",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "chest_trauma",
+   "topic": "Chest trauma (tension pneumothorax, haemothorax)",
+   "tier": "cant_miss",
+   "complaint": "breathless after trauma",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-08-major-trauma.md",
+     "name": "EM handbook ch 8",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "abdo_trauma",
+   "topic": "Blunt abdominal trauma",
+   "tier": "cant_miss",
+   "complaint": "abdominal pain after trauma",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-08-major-trauma.md",
+     "name": "EM handbook ch 8",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "pelvic_trauma",
+   "topic": "Pelvic fracture with haemorrhage",
+   "tier": "cant_miss",
+   "complaint": "hypotension after a fall",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-08-major-trauma.md",
+     "name": "EM handbook ch 8",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "burns",
+   "topic": "Burns",
+   "tier": "cant_miss",
+   "complaint": "burn injury",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-08-major-trauma.md",
+     "name": "EM handbook ch 8",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "hip_fracture",
+   "topic": "Hip fracture in an older adult",
+   "tier": "common",
+   "complaint": "fall, cannot weight-bear",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "wrist_scaphoid",
+   "topic": "Wrist injury (distal radius, scaphoid)",
+   "tier": "common",
+   "complaint": "fall on outstretched hand",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "ankle_injury",
+   "topic": "Ankle injury",
+   "tier": "common",
+   "complaint": "twisted ankle",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "shoulder_dislocation",
+   "topic": "Shoulder dislocation",
+   "tier": "common",
+   "complaint": "shoulder pain after fall",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "septic_arthritis",
+   "topic": "Hot swollen joint",
+   "tier": "cant_miss",
+   "complaint": "painful swollen knee",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "compartment_syndrome",
+   "topic": "Compartment syndrome",
+   "tier": "cant_miss",
+   "complaint": "severe leg pain after fracture",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "wounds_bites",
+   "topic": "Lacerations, bites and tetanus",
+   "tier": "common",
+   "complaint": "cut or bite",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-09-wounds-fractures-and-orthopaedics.md",
+     "name": "EM handbook ch 9",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "appendicitis",
+   "topic": "Appendicitis",
+   "tier": "common",
+   "complaint": "right lower abdominal pain",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "bowel_obstruction",
+   "topic": "Bowel obstruction",
+   "tier": "common",
+   "complaint": "vomiting and distension",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "biliary",
+   "topic": "Biliary colic / cholecystitis / cholangitis",
+   "tier": "common",
+   "complaint": "right upper quadrant pain",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "pancreatitis",
+   "topic": "Acute pancreatitis",
+   "tier": "common",
+   "complaint": "epigastric pain radiating to back",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "mesenteric_ischaemia",
+   "topic": "Mesenteric ischaemia",
+   "tier": "rare",
+   "complaint": "pain out of proportion to exam",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "perforation",
+   "topic": "Perforated viscus",
+   "tier": "cant_miss",
+   "complaint": "sudden severe abdominal pain",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "renal_colic",
+   "topic": "Renal colic",
+   "tier": "common",
+   "complaint": "loin to groin pain",
+   "step2_system": "renal_reproductive",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "testicular_torsion",
+   "topic": "Testicular torsion",
+   "tier": "cant_miss",
+   "complaint": "acute scrotal pain",
+   "step2_system": "renal_reproductive",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    },
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "urinary_retention",
+   "topic": "Acute urinary retention",
+   "tier": "common",
+   "complaint": "cannot pass urine",
+   "step2_system": "renal_reproductive",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook ch 10",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "red_eye",
+   "topic": "Painful red eye (acute angle-closure, iritis, keratitis)",
+   "tier": "cant_miss",
+   "complaint": "painful red eye",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-11-ophthalmology.md",
+     "name": "EM handbook ch 11",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "visual_loss",
+   "topic": "Sudden painless visual loss",
+   "tier": "rare",
+   "complaint": "sudden loss of vision",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-11-ophthalmology.md",
+     "name": "EM handbook ch 11",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "chemical_eye",
+   "topic": "Chemical eye injury",
+   "tier": "cant_miss",
+   "complaint": "chemical splash to eye",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-11-ophthalmology.md",
+     "name": "EM handbook ch 11",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "epistaxis",
+   "topic": "Epistaxis",
+   "tier": "common",
+   "complaint": "nosebleed",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-12-ear-nose-and-throat.md",
+     "name": "EM handbook ch 12",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "sore_throat",
+   "topic": "Sore throat (quinsy, epiglottitis)",
+   "tier": "common",
+   "complaint": "sore throat, cannot swallow",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-12-ear-nose-and-throat.md",
+     "name": "EM handbook ch 12",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "ectopic",
+   "topic": "Ectopic pregnancy",
+   "tier": "cant_miss",
+   "complaint": "lower abdominal pain, missed period",
+   "step2_system": "pregnancy",
+   "references": [
+    {
+     "file": "em-handbook-13-obstetrics-and-gynaecology.md",
+     "name": "EM handbook ch 13",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "early_pregnancy_bleed",
+   "topic": "Bleeding in early pregnancy",
+   "tier": "common",
+   "complaint": "vaginal bleeding in pregnancy",
+   "step2_system": "pregnancy",
+   "references": [
+    {
+     "file": "em-handbook-13-obstetrics-and-gynaecology.md",
+     "name": "EM handbook ch 13",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "preeclampsia",
+   "topic": "Pre-eclampsia / eclampsia",
+   "tier": "cant_miss",
+   "complaint": "headache in late pregnancy",
+   "step2_system": "pregnancy",
+   "references": [
+    {
+     "file": "em-handbook-13-obstetrics-and-gynaecology.md",
+     "name": "EM handbook ch 13",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "pid",
+   "topic": "Pelvic inflammatory disease",
+   "tier": "common",
+   "complaint": "lower abdominal pain and discharge",
+   "step2_system": "renal_reproductive",
+   "references": [
+    {
+     "file": "em-handbook-13-obstetrics-and-gynaecology.md",
+     "name": "EM handbook ch 13",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "ovarian_torsion",
+   "topic": "Ovarian torsion",
+   "tier": "cant_miss",
+   "complaint": "sudden unilateral pelvic pain",
+   "step2_system": "renal_reproductive",
+   "references": [
+    {
+     "file": "em-handbook-13-obstetrics-and-gynaecology.md",
+     "name": "EM handbook ch 13",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "self_harm",
+   "topic": "Self-harm and suicide risk assessment",
+   "tier": "common",
+   "complaint": "took an overdose / self-harm",
+   "step2_system": "behavioral",
+   "references": [
+    {
+     "file": "em-handbook-14-psychiatry.md",
+     "name": "EM handbook ch 14",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "acute_agitation",
+   "topic": "Acute behavioural disturbance",
+   "tier": "common",
+   "complaint": "agitated and aggressive",
+   "step2_system": "behavioral",
+   "references": [
+    {
+     "file": "em-handbook-14-psychiatry.md",
+     "name": "EM handbook ch 14",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "capacity_refusal",
+   "topic": "Capacity and refusal of treatment",
+   "tier": "common",
+   "complaint": "wants to leave against advice",
+   "step2_system": "behavioral",
+   "references": [
+    {
+     "file": "em-handbook-14-psychiatry.md",
+     "name": "EM handbook ch 14",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "febrile_infant",
+   "topic": "Febrile infant / serious bacterial infection",
+   "tier": "cant_miss",
+   "complaint": "fever in a young baby",
+   "step2_system": "human_development",
+   "references": [
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "paeds_sepsis",
+   "topic": "Paediatric sepsis",
+   "tier": "cant_miss",
+   "complaint": "unwell child with fever",
+   "step2_system": "human_development",
+   "references": [
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    },
+    {
+     "file": "sepsis-peds-2026.pdf",
+     "name": "Surviving Sepsis Campaign International Guidelines for Sepsis and Septic Shock in Children 2026 (Pediatr Crit Care Med 2026)",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "bronchiolitis",
+   "topic": "Bronchiolitis",
+   "tier": "common",
+   "complaint": "infant with cough and poor feeding",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "croup",
+   "topic": "Croup",
+   "tier": "common",
+   "complaint": "barking cough and stridor",
+   "step2_system": "respiratory",
+   "references": [
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "paeds_gastro",
+   "topic": "Gastroenteritis and dehydration in children",
+   "tier": "common",
+   "complaint": "child with vomiting and diarrhoea",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "febrile_seizure",
+   "topic": "Febrile seizure",
+   "tier": "common",
+   "complaint": "child had a fit with fever",
+   "step2_system": "nervous",
+   "references": [
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "intussusception",
+   "topic": "Intussusception",
+   "tier": "cant_miss",
+   "complaint": "infant with intermittent screaming",
+   "step2_system": "gastrointestinal",
+   "references": [
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "limping_child",
+   "topic": "Limping child (septic hip, SCFE, transient synovitis)",
+   "tier": "common",
+   "complaint": "child won't walk",
+   "step2_system": "musculoskeletal_skin",
+   "references": [
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "nai",
+   "topic": "Non-accidental injury",
+   "tier": "cant_miss",
+   "complaint": "injury that doesn't fit the story",
+   "step2_system": "behavioral",
+   "references": [
+    {
+     "file": "em-handbook-15-paediatric-emergencies.md",
+     "name": "EM handbook ch 15",
+     "region": "UK"
+    }
+   ],
+   "verified": false,
+   "ecg_codes": []
+  },
+  {
+   "id": "stemi",
+   "topic": "STEMI",
+   "tier": "common",
+   "complaint": "chest pain",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "acs-2025.pdf",
+     "folder": "cardio",
+     "name": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "INJAS",
+    "INJAL",
+    "INJIN",
+    "INJLA",
+    "INJIL"
+   ]
+  },
+  {
+   "id": "nste_acs",
+   "topic": "NSTE-ACS (NSTEMI or unstable angina)",
+   "tier": "common",
+   "complaint": "chest pain",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "acs-2025.pdf",
+     "folder": "cardio",
+     "name": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "ISCAL",
+    "ISCAS",
+    "ISCIN",
+    "ISCIL",
+    "ISCLA",
+    "ISCAN"
+   ]
+  },
+  {
+   "id": "cardiogenic_shock",
+   "topic": "Cardiogenic shock complicating acute MI",
+   "tier": "cant_miss",
+   "complaint": "chest pain and hypotension",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "acs-2025.pdf",
+     "folder": "cardio",
+     "name": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "INJAS",
+    "INJAL",
+    "INJIN"
+   ]
+  },
+  {
+   "id": "adhf",
+   "topic": "Acute decompensated heart failure with reduced EF",
+   "tier": "common",
+   "complaint": "breathless, swollen legs",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "hf-2022.pdf",
+     "folder": "cardio",
+     "name": "2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "CLBBB",
+    "LVH",
+    "ASMI",
+    "AFIB"
+   ]
+  },
+  {
+   "id": "af_rvr",
+   "topic": "Atrial fibrillation with rapid ventricular response",
+   "tier": "common",
+   "complaint": "palpitations",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "af-2023.pdf",
+     "folder": "cardio",
+     "name": "2023 ACC/AHA/ACCP/HRS Guideline for the Diagnosis and Management of Atrial Fibrillation",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "AFIB"
+   ],
+   "ecg_rate": [
+    110,
+    null
+   ]
+  },
+  {
+   "id": "svt",
+   "topic": "Paroxysmal supraventricular tachycardia",
+   "tier": "common",
+   "complaint": "palpitations",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "svt-2015.pdf",
+     "folder": "cardio",
+     "name": "2015 ACC/AHA/HRS Guideline for the Management of Adult Patients With Supraventricular Tachycardia",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "SVTAC",
+    "PSVT"
+   ],
+   "ecg_rate": [
+    140,
+    null
+   ]
+  },
+  {
+   "id": "brady",
+   "topic": "Symptomatic bradycardia or high-grade AV block",
+   "tier": "cant_miss",
+   "complaint": "dizzy with a slow pulse",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "brady-2018.pdf",
+     "folder": "cardio",
+     "name": "2018 ACC/AHA/HRS Guideline on the Evaluation and Management of Patients With Bradycardia and Cardiac Conduction Delay",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "3AVB",
+    "2AVB",
+    "SBRAD"
+   ],
+   "ecg_rate": [
+    null,
+    55
+   ]
+  },
+  {
+   "id": "syncope",
+   "topic": "Syncope",
+   "tier": "common",
+   "complaint": "collapse",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "syncope-2017.pdf",
+     "folder": "cardio",
+     "name": "2017 ACC/AHA/HRS Guideline for the Evaluation and Management of Patients With Syncope",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "3AVB",
+    "2AVB",
+    "WPW",
+    "LNGQT",
+    "SBRAD"
+   ]
+  },
+  {
+   "id": "cardiac_arrest",
+   "topic": "Cardiac arrest or unstable ventricular tachycardia",
+   "tier": "cant_miss",
+   "complaint": "collapse, no pulse",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-02-life-threatening-emergencies.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "acls.pdf",
+     "folder": "cardio",
+     "name": "Current AHA Guidelines for CPR and Emergency Cardiovascular Care (ACLS)",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "pericarditis",
+   "topic": "Acute pericarditis",
+   "tier": "common",
+   "complaint": "pleuritic chest pain",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "myoperi-esc-2025.pdf",
+     "folder": "cardio",
+     "name": "2025 ESC Guidelines for the management of myocarditis and pericarditis (no current ACC/AHA guideline)",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "tamponade",
+   "topic": "Cardiac tamponade",
+   "tier": "cant_miss",
+   "complaint": "breathless and hypotensive",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "myoperi-esc-2025.pdf",
+     "folder": "cardio",
+     "name": "2025 ESC Guidelines for the management of myocarditis and pericarditis (no current ACC/AHA guideline)",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "LVOLT"
+   ]
+  },
+  {
+   "id": "aortic_dissection",
+   "topic": "Acute aortic dissection",
+   "tier": "cant_miss",
+   "complaint": "tearing chest pain",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "aortic-2022.pdf",
+     "folder": "cardio",
+     "name": "2022 ACC/AHA Guideline for the Diagnosis and Management of Aortic Disease",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "NORM",
+    "LVH"
+   ]
+  },
+  {
+   "id": "htn_emergency",
+   "topic": "Hypertensive emergency",
+   "tier": "cant_miss",
+   "complaint": "very high blood pressure with symptoms",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-03-medicine.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "htn-2025.pdf",
+     "folder": "cardio",
+     "name": "2025 AHA/ACC Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": [
+    "LVH"
+   ]
+  },
+  {
+   "id": "ruptured_aaa",
+   "topic": "Ruptured / symptomatic abdominal aortic aneurysm",
+   "tier": "cant_miss",
+   "complaint": "sudden back or abdominal pain with collapse",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "aortic-2022.pdf",
+     "folder": "cardio",
+     "name": "2022 ACC/AHA Guideline for the Diagnosis and Management of Aortic Disease",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  },
+  {
+   "id": "acute_limb_ischemia",
+   "topic": "Acute limb ischemia",
+   "tier": "cant_miss",
+   "complaint": "sudden cold painful leg",
+   "step2_system": "cardiovascular",
+   "references": [
+    {
+     "file": "em-handbook-10-surgery.md",
+     "name": "EM handbook",
+     "region": "UK"
+    },
+    {
+     "file": "pad-2024.pdf",
+     "folder": "cardio",
+     "name": "2024 ACC/AHA/Multisociety Guideline for the Management of Lower Extremity Peripheral Artery Disease",
+     "region": "US"
+    }
+   ],
+   "verified": true,
+   "ecg_codes": []
+  }
+ ]
+}

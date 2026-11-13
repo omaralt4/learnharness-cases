@@ -320,6 +320,22 @@
         "LVH",
         "SEHYP"
       ]
-    }
+    },
+    {
+      "id": "ruptured_aaa",
+      "topic": "Ruptured / symptomatic abdominal aortic aneurysm",
+      "guideline": "2022 ACC/AHA Guideline for the Diagnosis and Management of Aortic Disease",
+      "guideline_file": "aortic-2022.pdf",
+      "verified": true,
+      "ecg_codes": []
+      },
+      {
+      "id": "acute_limb_ischemia",
+      "topic": "Acute limb ischemia",
+      "guideline": "2024 ACC/AHA/Multisociety Guideline for the Management of Lower Extremity Peripheral Artery Disease",
+      "guideline_file": "pad-2024.pdf",
+      "verified": true,
+      "ecg_codes": []
+      }
   ]
 }
