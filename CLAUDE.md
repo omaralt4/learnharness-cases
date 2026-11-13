@@ -28,7 +28,7 @@ plugin/case-images/dist/
   manifest.json         id, version, minAppVersion
   backend.cjs           Node CommonJS: the two tools, then registerCases() for the Cases page handlers
   main.js               browser ES module: the two tool renderers, then the Cases view and settings page
-*.bat                   launchers: New cardio case, Cardio case report, Cardio review, Prepare cardio guidelines, Install plugin
+*.bat                   launchers: New cardio case, New EM case, Cardio case report, Cardio review, Prepare cardio guidelines, Install plugin
 README.md, LICENSE      user guide; AGPL-3.0
 CLAUDE_CODE_BRIEF.md    the original brief for the Cases page work
 
@@ -55,7 +55,7 @@ The installed plugin lives at `%APPDATA%\LearnHarness\data\plugins\case-images\d
 - Extras (rolled per case, written into the case file as ON/off): full history and exam, exam sign deep dive, ethics or communication, recall questions, exam-style questions. **Adding an extra touches four places:** `EXTRA_LABELS` and `DEFAULT_SCENARIOS` in `pick_case.py`, `DEFAULT_SCENARIOS` and `LABELS` in `backend.cjs` (the Mix tab then shows it by itself), `scenarios.json`, and a paragraph in `10-doctrine.md` telling the agent what the extra means (only when the user supplies or approves the text). Adding one changes which cases a given `--seed` produces.
 - **Topic fields** (only `id` and `topic` are required; `topics/cardio.json` uses the old pair and must keep working unchanged):
   - `guideline` + `guideline_file`: the original single reference. A topic without a `references` key gets exactly the old seed text.
-  - `references`: a list of `{"file", "name", "region"}`. `file` is a PDF (read through its converted `.md`) or a chapter `.md` from `chapters.txt`; `othersystem/file` borrows from another system's folder. Each reference gets its own neutral link (`case_…_ref.md`, `_ref2.md`, …). A non-US `region` (e.g. `"UK"`) labels it `Reference (UK)` and adds the "grade against US practice" sentence (`region_note()`); US or no region is labelled `Current guideline`.
+  - `references`: a list of `{"file", "name", "region"}`. `file` is a PDF (read through its converted `.md`) or a chapter `.md` from `chapters.txt`; `othersystem/file` borrows from another system's folder. Each reference gets its own neutral link (`case_…_ref.md`, `_ref2.md`, …). A non-US `region` (e.g. `"UK"`) labels it `Reference (UK)` and adds the "grade against US practice" sentence (`region_note()`); US or no region is labelled `Current guideline`. The Built cases paragraph of `10-doctrine.md` carries the matching rule (non-US reference for presentation and approach, management from US practice).
   - `tier`: `common`, `cant_miss` or `rare`. The weights live once in `scenarios.json` under `tiers` (default 3, 2, 1); no tier means weight 1.
   - `complaint`: written into the seed as the presenting complaint to open with.
   - Topic files are read as `utf-8-sig`, because Notepad and PowerShell can add a BOM.

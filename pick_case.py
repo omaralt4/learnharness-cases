@@ -336,7 +336,10 @@ def convert_guideline(pdf: Path, md_path: Path) -> dict:
     return write_guideline_text(pdf_pages(pdf), f"# {pdf.stem} (text version of {pdf.name})", md_path)
 
 
-def write_guideline_text(pages: list, title_line: str, md_path: Path) -> dict:
+def write_guideline_text(pages: list, title_line: str, md_path: Path, deep: bool = False) -> dict:
+    """pages is [(page label, markdown text)]. The contents list indexes headings down to level 3.
+    With deep=True (book chapters, whose section titles sit at level 4 or lower) it goes as deep
+    as it can while staying under two entries per page."""
     # Running headers and footers ("Downloaded from...", author line, page numbers) repeat on most
     # pages. Drop any short line that appears on 60% or more of pages. Headings and table rows are
     # never dropped: numbered headings look alike once digits are ignored.
@@ -362,11 +365,20 @@ def write_guideline_text(pages: list, title_line: str, md_path: Path) -> dict:
         body.append(f"--- Page {num} ---")
         body.append("")
         for line in content.splitlines():
-            m = re.match(r"^(#{1,3})\s+(.*\S)", line)
+            m = re.match(r"^(#{1,6})\s+(.*\S)", line)
             if m:
                 headings.append((len(body), num, len(m.group(1)), m.group(2).strip("* ")))
             body.append(line)
         body.append("")
+
+    depth = 3
+    if deep:
+        for level in (4, 5, 6):
+            if sum(1 for h in headings if h[2] <= level) > 2 * len(pages):
+                break
+            depth = level
+    headings = [h for h in headings if h[2] <= depth]
+    top = min((h[2] for h in headings), default=1) if deep else 1
 
     head = [
         title_line,
@@ -376,7 +388,7 @@ def write_guideline_text(pages: list, title_line: str, md_path: Path) -> dict:
     ]
     contents_len = len(head) + len(headings) + 2
     for idx, num, level, title in headings:
-        head.append(f"L{contents_len + idx + 1}  p{num}  {'  ' * (level - 1)}{title}")
+        head.append(f"L{contents_len + idx + 1}  p{num}  {'  ' * (level - top)}{title}")
     head += ["", "=" * 40]
     assert len(head) == contents_len, "contents length mismatch"
     md_path.write_text("\n".join(head + body) + "\n", encoding="utf-8")
@@ -401,8 +413,9 @@ def chapter_plan(pdf: Path) -> list:
         count = doc.page_count
         tops = [(INVISIBLE.sub("", title).strip(), page) for level, title, page, *_ in doc.get_toc()
                 if level == 1 and 1 <= page <= count]
-    if count <= SPLIT_OVER_PAGES or len(tops) < 2:
-        return []
+        if count <= SPLIT_OVER_PAGES or len(tops) < 2:
+            return []
+        printed = {i + 1: (doc[i].get_label() or "").strip() for i in range(count)}  # PDF page -> printed page
     plan, taken = [], set()
     for i, (title, first) in enumerate(tops):
         last = max(first, tops[i + 1][1] - 1 if i + 1 < len(tops) else count)
@@ -416,8 +429,15 @@ def chapter_plan(pdf: Path) -> list:
             while name in taken:
                 name, n = f"{base}-{n}.md", n + 1
             taken.add(name)
-        plan.append({"title": title, "first": first, "last": last, "file": name})
+        plan.append({"title": title, "first": first, "last": last, "file": name,
+                     "labels": {n: printed[n] for n in range(first, last + 1) if printed[n]}})
     return plan
+
+
+def chapter_pages(ch: dict) -> str:
+    """'pages 187-226' in the book's own numbering when the PDF has it, else 'PDF pages 206-245'."""
+    a, b = ch["labels"].get(ch["first"]), ch["labels"].get(ch["last"])
+    return f"pages {a}-{b}" if a and b else f"PDF pages {ch['first']}-{ch['last']}"
 
 
 def convert_chapters(pdf: Path, plan: list) -> dict:
@@ -426,10 +446,12 @@ def convert_chapters(pdf: Path, plan: list) -> dict:
     for ch in plan:
         if not ch["file"]:
             continue
-        part = [(num, text) for num, text in pages if ch["first"] <= num <= ch["last"]]
+        # Page markers carry the book's printed page number, which is what its cross-references
+        # ("see p. 225") and a citation use.
+        part = [(ch["labels"].get(num, num), text) for num, text in pages if ch["first"] <= num <= ch["last"]]
         r = write_guideline_text(
-            part, f"# {ch['title']} (text version of {pdf.name}, PDF pages {ch['first']}-{ch['last']})",
-            pdf.with_name(ch["file"]))
+            part, f"# {ch['title']} (text version of {pdf.name}, {chapter_pages(ch)})",
+            pdf.with_name(ch["file"]), deep=True)
         total["headings"] += r["headings"]
         total["weak"] += r["weak"]
         total["words"] += r["words"]
@@ -440,15 +462,15 @@ def convert_chapters(pdf: Path, plan: list) -> dict:
 def write_chapter_list(folder: Path, plans: dict) -> None:
     """chapters.txt: every chapter file in this folder with its page range and title."""
     lines = ["Chapter files written by 'prepare'. Use a file name as \"file\" in a topic's \"references\".",
-             "Pages are PDF page numbers, as in the '--- Page N ---' markers inside each file.", ""]
+             "Pages are the book's printed page numbers where the PDF has them, as in the '--- Page N ---' "
+             "markers inside each file.", ""]
     for pdf_name, plan in plans.items():
         lines.append(pdf_name)
         written = [ch for ch in plan if ch["file"]]
         width = max((len(ch["file"]) for ch in written), default=0)
         for ch in written:
-            pages = f"p{ch['first']}-{ch['last']}"
-            lines.append(f"  {ch['file']:{width}}  {pages:10}  {ch['title']}")
-        skipped = [f"{ch['title']} (p{ch['first']})" for ch in plan if not ch["file"]]
+            lines.append(f"  {ch['file']:{width}}  {chapter_pages(ch):18}  {ch['title']}")
+        skipped = [ch["title"] for ch in plan if not ch["file"]]
         if skipped:
             lines.append(f"  no file (under {MIN_CHAPTER_PAGES} pages): " + ", ".join(skipped))
         lines.append("")
