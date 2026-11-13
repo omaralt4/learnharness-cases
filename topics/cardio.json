@@ -1,5 +1,6 @@
 {
   "system": "cardio",
+  "step2_system": "cardiovascular",
   "note": "Common Step 2 CK cardiology presentations. 'guideline_file' is the PDF you save in guidelines/cardio/. 'verified' marks whether the guideline version was checked as current in Nov 2026; check the false ones yourself before relying on them. 'ecg_codes' are PTB-XL SCP-ECG codes; an ECG with one of them is attached to the case (empty list = no ECG). Edit freely. Optional 'ecg_rate' [min, max] in beats/min (null = no limit) makes the script pick only tracings in that range, e.g. AF with RVR needs a fast one.",
   "complaints": [
     "chest pain",

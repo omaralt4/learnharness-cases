@@ -99,7 +99,22 @@ DEFAULT_SCENARIOS = {
     "review": {"weak_below": 0.7, "after_days": 2, "order": "unseen_first"},
     # Relative weight of a topic's optional "tier". A topic with no tier has weight 1.
     "tiers": {"common": 3, "cant_miss": 2, "rare": 1},
+    # Step 2 CK content weights by system (midpoints of the USMLE ranges), used when several
+    # systems are mixed. "untagged" is the bucket for topics with no step2_system.
+    "step2_systems": {"renal_reproductive": 10, "cardiovascular": 9, "musculoskeletal_skin": 9, "behavioral": 7.5,
+                      "blood_immune": 7.5, "gastrointestinal": 7.5, "nervous": 7.5, "respiratory": 7.5,
+                      "multisystem": 6, "endocrine": 5, "pregnancy": 5, "human_development": 3, "untagged": 5},
 }
+STEP2_LABELS = {
+    "renal_reproductive": "Renal, urinary and reproductive", "cardiovascular": "Cardiovascular",
+    "musculoskeletal_skin": "Musculoskeletal and skin", "behavioral": "Behavioral health",
+    "blood_immune": "Blood and immune", "gastrointestinal": "Gastrointestinal",
+    "nervous": "Nervous system and special senses", "respiratory": "Respiratory",
+    "multisystem": "Multisystem processes", "endocrine": "Endocrine",
+    "pregnancy": "Pregnancy, childbirth and puerperium", "human_development": "Human development",
+    "untagged": "Untagged",
+}
+UNTAGGED = "untagged"
 
 
 # ---------- shared ----------
@@ -156,9 +171,19 @@ def load_pool(systems: list) -> list:
     ids may repeat between systems, so everything in progress.json is keyed by '_key'."""
     pool = []
     for system in systems:
-        for t in load_topics(system)["topics"]:
-            pool.append({**t, "_system": system, "_key": f"{system}/{t['id']}"})
+        data = load_topics(system)
+        for t in data["topics"]:
+            # A topic's own step2_system wins; otherwise the file's top-level default applies.
+            pool.append({**t, "_system": system, "_key": f"{system}/{t['id']}",
+                         "_step2": t.get("step2_system") or data.get("step2_system")})
     return pool
+
+
+def step2_bucket(topic: dict, table: dict) -> str:
+    """The Step 2 system a topic is drawn under: its step2_system when the table in
+    scenarios.json has it, else the shared 'untagged' bucket."""
+    name = topic.get("_step2")
+    return name if isinstance(name, str) and name in table and name != UNTAGGED else UNTAGGED
 
 
 LEGACY_SYSTEM = "cardio"  # progress.json written before mixed systems used bare topic ids, all cardio
@@ -603,7 +628,12 @@ def load_scenarios() -> dict:
     for k, v in tiers.items():
         if not isinstance(v, (int, float)) or isinstance(v, bool) or v <= 0:
             sys.exit(f"{SCENARIOS.name}: tier '{k}' needs a weight above 0 (it is {v}).")
-    return {"encounters": enc, "extras": extras, "review": review, "tiers": tiers}
+    step2 = {**DEFAULT_SCENARIOS["step2_systems"],
+             **{k: v for k, v in s.get("step2_systems", {}).items() if not k.startswith("_")}}
+    for k, v in step2.items():
+        if not isinstance(v, (int, float)) or isinstance(v, bool) or v < 0:
+            sys.exit(f"{SCENARIOS.name}: Step 2 system '{k}' needs a weight of 0 or more (it is {v}).")
+    return {"encounters": enc, "extras": extras, "review": review, "tiers": tiers, "step2_systems": step2}
 
 
 def roll_scenario(sc: dict, rng: random.Random) -> dict:
@@ -887,6 +917,27 @@ def pick_topics(topics: list, built: dict, n: int, rng: random.Random, hist: dic
     return pool[:n]
 
 
+def pick_mixed(topics: list, built: dict, n: int, rng: random.Random, hist: dict, review: dict, tiers: dict,
+               table: dict) -> list:
+    """Mixed systems: each case first draws a Step 2 system, weighted by the table in
+    scenarios.json but only among the systems that still have a topic in the pool, then picks
+    the topic inside it with the usual rules (pick_topics)."""
+    left, chosen = topics[:], []
+    for _ in range(n):
+        buckets = {}
+        for t in left:
+            buckets.setdefault(step2_bucket(t, table), []).append(t)
+        if not buckets:
+            break
+        names = sorted(b for b in buckets if table.get(b, 0) > 0) or sorted(buckets)
+        weights = [table.get(b, 0) or 1 for b in names]
+        bucket = rng.choices(names, weights=weights)[0]
+        topic = pick_topics(buckets[bucket], built, 1, rng, hist, review, tiers)[0]
+        chosen.append(topic)
+        left.remove(topic)
+    return chosen
+
+
 def cmd_common(args, rng):
     topics = load_pool(args.systems)
     scenarios = load_scenarios()
@@ -894,7 +945,11 @@ def cmd_common(args, rng):
     built = progress.setdefault("built", {})
     enc_counts = progress.setdefault("encounters", {})
     hist = topic_history(progress, read_log())
-    chosen = pick_topics(topics, built, args.batch, rng, hist, scenarios["review"], scenarios["tiers"])
+    if len(args.systems) > 1:
+        chosen = pick_mixed(topics, built, args.batch, rng, hist, scenarios["review"], scenarios["tiers"],
+                            scenarios["step2_systems"])
+    else:  # one system: no Step 2 draw, so its picks are what they always were
+        chosen = pick_topics(topics, built, args.batch, rng, hist, scenarios["review"], scenarios["tiers"])
     missing = unconverted = 0
     made = []
     with_ecg = []
@@ -1229,6 +1284,69 @@ def system_status(system: str, built: dict, show_topics: bool) -> dict:
     return out
 
 
+def step2_mix(systems: list, progress: dict, log: dict, table: dict, everything: bool) -> list:
+    """Built cases per Step 2 system, with the share the weights aim for among the systems these
+    topic lists cover. Counts finished cases only, because a count that moves when a case is made
+    tells which system that unrun case came from; everything=True (--show-topics) counts them all."""
+    pool = load_pool(systems)
+    bucket_of = {t["_key"]: step2_bucket(t, table) for t in pool}
+    present = sorted(set(bucket_of.values()))
+    counts = dict.fromkeys(present, 0)
+    for case_id, meta in progress.get("cases", {}).items():
+        b = bucket_of.get(meta.get("topic"))
+        if b and (everything or case_id in log):
+            counts[b] += 1
+    live = [b for b in present if table.get(b, 0) > 0] or present
+    total_weight = sum(table.get(b, 0) or 1 for b in live)
+    rows = [{"key": b, "label": STEP2_LABELS.get(b, b.replace("_", " ").capitalize()), "count": counts[b],
+             "target": ((table.get(b, 0) or 1) / total_weight if b in live else 0.0)} for b in present]
+    return sorted(rows, key=lambda r: (-r["count"], -r["target"], r["key"]))
+
+
+def topic_warnings(table: dict, tiers: dict) -> list:
+    """Problems across all topic lists: the same id, the same topic text, or the same 'canonical'
+    diagnosis in more than one place, and tier or step2_system names scenarios.json doesn't have."""
+    by_id, by_text, by_canon, out = {}, {}, {}, []
+    bad_tier, bad_step2 = {}, {}
+
+    def where(entries):
+        return ", ".join(f"{system} ('{topic}')" for system, topic in entries)
+
+    for system in all_systems():
+        try:
+            data = load_topics(system)
+        except SystemExit as e:
+            out.append(str(e.code))
+            continue
+        default = data.get("step2_system")
+        if default and default not in table:
+            bad_step2.setdefault(str(default), set()).add(system)
+        for t in data["topics"]:
+            entry = (system, str(t["topic"]))
+            by_id.setdefault(str(t["id"]).strip().lower(), []).append(entry)
+            by_text.setdefault(" ".join(str(t["topic"]).lower().split()), []).append(entry)
+            if t.get("canonical"):
+                by_canon.setdefault(" ".join(str(t["canonical"]).lower().split()), []).append(entry)
+            if t.get("tier") and t["tier"] not in tiers:
+                bad_tier.setdefault(str(t["tier"]), set()).add(system)
+            if t.get("step2_system") and t["step2_system"] not in table:
+                bad_step2.setdefault(str(t["step2_system"]), set()).add(system)
+    flagged = set()  # one warning per group of topics, by the strongest link
+    for label, groups in (("The same topic text appears more than once", by_text),
+                          ("Topics marked as the same diagnosis (canonical '{key}')", by_canon),
+                          ("The same id '{key}' is used more than once", by_id)):
+        for key, entries in groups.items():
+            if len(entries) > 1 and frozenset(entries) not in flagged:
+                flagged.add(frozenset(entries))
+                out.append(f"{label.format(key=key)}: {where(entries)}")
+    for name, systems in sorted(bad_tier.items()):
+        out.append(f"Tier '{name}' ({', '.join(sorted(systems))}) is not in scenarios.json, so those topics get weight 1.")
+    for name, systems in sorted(bad_step2.items()):
+        out.append(f"Step 2 system '{name}' ({', '.join(sorted(systems))}) is not in scenarios.json, so those topics "
+                   "count as untagged.")
+    return out
+
+
 def cmd_status(args, rng):
     progress = load_progress()
     built = progress.get("built", {})
@@ -1272,7 +1390,23 @@ def cmd_status(args, rng):
             print(f"{tag}PDFs with names the topic list doesn't use (rename them?): " + ", ".join(s["strays"]))
     index = progress.get("cases", {})
     log = read_log()
+    scenarios = load_scenarios()
+    mix = step2_mix(args.systems, progress, log, scenarios["step2_systems"], args.show_topics)
+    counted = sum(r["count"] for r in mix)
+    if not single and counted:
+        print(f"\nStep 2 system mix so far ({'all built cases' if args.show_topics else 'finished cases only'}): "
+              + ", ".join(f"{r['label']} {r['count']} ({100 * r['count'] / counted:.0f}%, target {100 * r['target']:.0f}%)"
+                          for r in mix))
+    warnings = topic_warnings(scenarios["step2_systems"], scenarios["tiers"])
+    if warnings:
+        print("\nCheck the topic lists:")
+        for w in warnings:
+            print(f"  {w}")
     return {
+        "step2_mix": mix,
+        "step2_mix_scope": "all" if args.show_topics else "finished",
+        "step2_weighted": not single,
+        "warnings": warnings,
         "systems": systems,
         "topics_total": sum(s["topics_total"] for s in systems),
         "topics_covered": sum(s["topics_covered"] for s in systems),

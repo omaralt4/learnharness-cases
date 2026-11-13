@@ -1,5 +1,5 @@
 {
-  "_how_to_edit": "Encounter weights are relative: they don't need to add up to 100, a bigger number just means more often. Set one to 0 to switch it off. 'extras' are independent chances from 0 to 1 per case (0.25 = one case in four). Save the file and the next case uses the new values. 'review': a topic whose last case scored below weak_below (0.7 = 70%) comes back once after_days have passed since that case. 'order': \"unseen_first\" works through every unseen topic before reviews; \"review_first\" puts due reviews ahead of unseen topics. 'tiers': a topic may carry a \"tier\" in its topic file; the weight here says how much more often that tier comes up (3 = three times as often as weight 1). A topic with no tier has weight 1.",
+  "_how_to_edit": "Encounter weights are relative: they don't need to add up to 100, a bigger number just means more often. Set one to 0 to switch it off. 'extras' are independent chances from 0 to 1 per case (0.25 = one case in four). Save the file and the next case uses the new values. 'review': a topic whose last case scored below weak_below (0.7 = 70%) comes back once after_days have passed since that case. 'order': \"unseen_first\" works through every unseen topic before reviews; \"review_first\" puts due reviews ahead of unseen topics. 'tiers': a topic may carry a \"tier\" in its topic file; the weight here says how much more often that tier comes up (3 = three times as often as weight 1). A topic with no tier has weight 1. 'step2_systems': used only when you mix several systems. Each case first draws a Step 2 system with these relative weights (the midpoints of the USMLE Step 2 CK content ranges), among the systems your ticked topic lists actually cover, then picks a topic inside it. 'untagged' is the weight shared by topics that have no step2_system.",
   "encounters": {
     "ed_first_presentation": 35,
     "ward_called_by_nurse": 15,
@@ -26,5 +26,20 @@
     "common": 3,
     "cant_miss": 2,
     "rare": 1
+  },
+  "step2_systems": {
+    "renal_reproductive": 10,
+    "cardiovascular": 9,
+    "musculoskeletal_skin": 9,
+    "behavioral": 7.5,
+    "blood_immune": 7.5,
+    "gastrointestinal": 7.5,
+    "nervous": 7.5,
+    "respiratory": 7.5,
+    "multisystem": 6,
+    "endocrine": 5,
+    "pregnancy": 5,
+    "human_development": 3,
+    "untagged": 5
   }
 }

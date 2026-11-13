@@ -13,6 +13,7 @@ A rounds-style case picker for USMLE Step 2 study in [LearnHarness](https://gith
    - `show_case_image(path, caption)` shows `cases/case_*.png|jpg` inline to the learner.
    - `log_case_result(case_file, diagnosis, decisions[], weak_spots[], exam_questions)` appends one line to `case_log.jsonl` in the folder that contains `cases/`. The score is correct = 1, partial = 0.5, wrong = 0, averaged over decisions.
 5. **Scheduling.** The next `common` run reads `progress.json` and `case_log.jsonl`. `pick_topics()` ranks: never-built topics, then weak topics that are due (last score below `review.weak_below`, built at least `review.after_days` ago, weakest first), then least-built. `review.order` swaps the first two groups. Ties are random. Tier weights refine this without changing the order of the groups: among never-built topics the heavier tier goes first, and "least-built" means the lowest built count divided by weight. With every weight 1 (cardio has no tiers) the picks for a given `--seed` are the same as before tiers existed; re-prove that with the old-versus-new seed diff under Testing whenever `pick_topics()` changes.
+   - **Several systems ticked** (`pick_mixed()`): each case first draws a Step 2 system from the `step2_systems` weights in `scenarios.json`, only among the systems that still have a topic in the pool, then runs `pick_topics()` inside that bucket. Topics with no (or an unknown) `step2_system` share the `untagged` bucket. One system never takes this path, so single-system picks don't change.
 6. **The Cases page** is a plugin view opened from the sidebar. Its backend runs `pick_case.py <command> --json` as a child process (no shell, args as an array, cwd = cases folder) and the frontend renders the result. Tabs: New case, Case report, Progress, Review, Mix (edits `scenarios.json`), Guidelines (runs `prepare` as a background job). The plugin settings page holds the cases folder and the Python path.
 
 A plugin cannot create a Practice session or type into its composer (`ctx.app.openSession` only navigates to an existing one). That is why the flow is "copy the message, the learner pastes it".
@@ -21,8 +22,8 @@ A plugin cannot create a Practice session or type into its composer (`ctx.app.op
 
 ```
 pick_case.py            case picker; Python 3.9+, standard library, optional numpy/matplotlib (ECGs), pymupdf/pymupdf4llm (prepare)
-scenarios.json          encounter weights, extras chances (0-1), review settings; user-edited, keep the _how_to_edit key
-topics/<system>.json    topic list: id, topic, guideline, guideline_file, ecg_codes, optional ecg_rate; plus complaints for reports
+scenarios.json          encounter weights, extras chances (0-1), review settings, tier weights, Step 2 system weights; user-edited, keep the _how_to_edit key
+topics/<system>.json    topic list (fields under "pick_case.py commands"); plus complaints for reports and an optional file-level step2_system
 10-doctrine.md          practice-agent instructions (see above)
 plugin/case-images/dist/
   manifest.json         id, version, minAppVersion
@@ -57,6 +58,8 @@ The installed plugin lives at `%APPDATA%\LearnHarness\data\plugins\case-images\d
   - `guideline` + `guideline_file`: the original single reference. A topic without a `references` key gets exactly the old seed text.
   - `references`: a list of `{"file", "name", "region"}`. `file` is a PDF (read through its converted `.md`) or a chapter `.md` from `chapters.txt`; `othersystem/file` borrows from another system's folder. Each reference gets its own neutral link (`case_…_ref.md`, `_ref2.md`, …). A non-US `region` (e.g. `"UK"`) labels it `Reference (UK)` and adds the "grade against US practice" sentence (`region_note()`); US or no region is labelled `Current guideline`. The Built cases paragraph of `10-doctrine.md` carries the matching rule (non-US reference for presentation and approach, management from US practice).
   - `tier`: `common`, `cant_miss` or `rare`. The weights live once in `scenarios.json` under `tiers` (default 3, 2, 1); no tier means weight 1.
+  - `step2_system`: the USMLE Step 2 CK system the topic belongs to, per topic or as a default at the top of the topic file (`cardio.json` sets `cardiovascular`). Names come from `step2_systems` in `scenarios.json`.
+  - `canonical`: an optional shared name that marks topics in different files as the same diagnosis; only `status` uses it, to warn.
   - `complaint`: written into the seed as the presenting complaint to open with.
   - Topic files are read as `utf-8-sig`, because Notepad and PowerShell can add a BOM.
 - Progress keys are `system/id`. `load_progress()` re-keys bare ids from older files under `cardio` and saves the original as `progress.json.bak` once.
@@ -69,9 +72,11 @@ The whole point is that the learner doesn't know the diagnosis until they work i
 - **Nothing about an unfinished case is shown.** No topic, diagnosis, guideline name or ECG label, in script output or in the GUI. A case is finished when it is in `case_log.jsonl`.
   - `status` hides topic names unless `--show-topics` is passed, because a topic counts as covered when its case is made.
   - With mixed systems, a per-system count going up reveals which system a new case came from. The backend's `status` handler therefore strips per-system counts and topic names unless `showTopics` is true, and the Progress switch is off every time the page opens (never persisted).
+  - The Step 2 system mix (`step2_mix()`) counts finished cases only, for the same reason; `--show-topics` / the Progress switch counts every built case. The text `status` prints it only for several systems.
   - The case file must not name its system.
   - The GUI never shows case file contents.
 - **Finished cases** may be shown with topic and diagnosis (Review).
+- **`status` warnings** (`topic_warnings()`, JSON key `warnings`) name topics from the topic lists, never from cases: the same id, the same topic text, or a shared `canonical` in more than one place, and tier or `step2_system` names missing from `scenarios.json`. They are printed only when there is something to report, so clean single-system output is unchanged.
 - **The `.bat` launchers keep working.** Keep every existing flag and the single-system plain-text output unchanged.
 - **Both plugin tools keep their names, parameters and behavior.** Add to the plugin; don't change them.
 - **Never commit** `cases/`, `guidelines/`, `data/`, `progress.json`, `case_log.jsonl`, `review.md` or `python_path.txt`. Cases are spoilers, guideline files belong to their publishers, the rest is personal or machine-specific. Check `git status` before committing.
