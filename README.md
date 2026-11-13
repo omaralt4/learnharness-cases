@@ -2,9 +2,23 @@
 
 A rounds-style case picker for [LearnHarness](https://github.com/amosblomqvist/learnharness) Practice sessions, built for USMLE Step 2 study.
 
-A Python script (`pick_case.py`) writes a case file that only the practice agent reads. You start a Practice session, paste the opening message, and work the case without knowing the diagnosis. A small LearnHarness plugin ("Rounds tools") shows ECGs inline and logs how each case went, so weak topics come back for review.
+A Python script (`pick_case.py`) writes a case file that only the practice agent reads. You start a Practice session, paste the opening message, and work the case without knowing the diagnosis. A LearnHarness plugin ("Rounds tools") shows ECGs inline, logs how each case went so weak topics come back for review, and adds a **Cases** page to the app that does everything the launchers do.
 
-Nothing here prints a case's topic, diagnosis or guideline. File names are neutral on purpose.
+Nothing here shows a case's topic, diagnosis or guideline before you finish it. File names are neutral on purpose.
+
+## The Cases page
+
+After installing the plugin (see Setup), open **Cases** from the sidebar in LearnHarness.
+
+- **Systems**: tick one or several. Several systems pool their topics, and the case never says which system it came from.
+- **New case**: makes a case and copies the opening message. Start a Practice session and paste.
+- **Case report**: the same, from a real open-access case report. Optional complaint, journal, and emergency department only.
+- **Progress**: coverage, encounter mix, and missing or unconverted guideline files. Per-system counts and topic names stay hidden unless you tick the switch, because they can give away a case you haven't run.
+- **Review**: weakest topics and weak spots from finished cases.
+- **Mix**: edits `scenarios.json` (encounter weights, extras, review settings).
+- **Guidelines**: converts guideline PDFs to text.
+
+The plugin's settings page (the gear on the Cases page) has the **Cases folder** and the **Python path**. Leave both empty to use `Documents\LearnHarness-cases` and the Python the launchers would find.
 
 ## Folder layout
 
@@ -48,7 +62,7 @@ python_path.txt         optional: full path to python.exe for the launchers
 
 4. **Prepare.** Run `Prepare cardio guidelines.bat` once (and again after adding PDFs). It converts the PDFs to searchable text so the agent reads only the sections a case needs.
 
-5. **Plugin.** Close LearnHarness, run `Install plugin.bat`, then start LearnHarness and enable "Rounds tools" under Settings → Community plugins. The launcher copies `plugin/case-images/dist` into `%APPDATA%\LearnHarness\data\plugins\case-images\dist`. Run it again after every plugin update.
+5. **Plugin.** Close LearnHarness, run `Install plugin.bat`, then start LearnHarness and enable "Rounds tools" under Settings → Community plugins. The launcher copies `plugin/case-images/dist` into `%APPDATA%\LearnHarness\data\plugins\case-images\dist` and leaves the plugin's own `data` folder alone. Run it again after every plugin update. The plugin is plain JavaScript with no build step; it runs `pick_case.py` with your Python and has the same access to your files as any LearnHarness plugin.
 
 6. **Doctrine.** In LearnHarness Settings, paste the contents of `10-doctrine.md` as the prompt override for the practice agent.
 
@@ -64,12 +78,21 @@ python_path.txt         optional: full path to python.exe for the launchers
 
 After making a case, start a Practice session and paste the opening message.
 
-For everything else, including coverage so far:
+## Command line
 
 ```
 python pick_case.py -h
-python pick_case.py status --system cardio
+python pick_case.py common --system cardio
+python pick_case.py common --system cardio,gi,pulm     several systems, topics pooled
+python pick_case.py status                             all systems; add --system to narrow
+python pick_case.py review --system cardio
 ```
+
+- `--system` takes one system, several separated by commas, or `all`. A system is a file in `topics/`.
+- `--json` on any command prints one JSON object instead of text. The Cases page uses it.
+- `--seed N` (before the command) makes the random picks repeatable.
+
+To add a system, add `topics/<name>.json` in the same shape as `topics/cardio.json` and put its guideline PDFs in `guidelines/<name>/`. Topic ids only need to be unique within a system: `progress.json` keys them as `system/id`. An older `progress.json` is converted on first use, and the original is kept as `progress.json.bak`.
 
 ## Sources and license
 
