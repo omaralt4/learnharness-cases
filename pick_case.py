@@ -17,6 +17,8 @@ Two kinds of case, plus a tracker:
            read only the sections they need instead of the whole PDF.
              python pick_case.py prepare --system cardio
            Needs: python -m pip install pymupdf pymupdf4llm
+           A book (over 150 pages, with bookmarks) becomes one text file per
+           chapter, listed in guidelines/<system>/chapters.txt.
 
   review   Weak topics and weak spots from finished cases (logged by the Rounds
            tools plugin). Also writes review.md.
@@ -118,8 +120,9 @@ def all_systems() -> list:
     return sorted(p.stem for p in (BASE / "topics").glob("*.json"))
 
 
-def parse_systems(value) -> list:
-    """'cardio' or 'cardio,gi,pulm' or 'all' -> list of system names, each with a topic list."""
+def parse_systems(value, need_topics: bool = True) -> list:
+    """'cardio' or 'cardio,gi,pulm' or 'all' -> list of system names, each with a topic list.
+    With need_topics=False (prepare), a system that only has a guidelines folder is accepted too."""
     if not value:
         return []
     names = [s.strip() for s in value.split(",") if s.strip()]
@@ -131,7 +134,8 @@ def parse_systems(value) -> list:
     for s in names:
         if not re.fullmatch(r"[A-Za-z0-9_-]+", s):
             sys.exit(f"'{s}' is not a system name. Use the file names in topics/ without .json, separated by commas.")
-        load_topics(s)  # exits with a clear message if the list is missing
+        if need_topics or not (BASE / "guidelines" / s).is_dir():
+            load_topics(s)  # exits with a clear message if the list is missing
     return names
 
 
@@ -280,11 +284,18 @@ def _norm(line: str) -> str:
     return re.sub(r"\d+", "#", line.strip().lower())
 
 
-def convert_guideline(pdf: Path, md_path: Path) -> dict:
+def pdf_pages(pdf: Path) -> list:
+    """[(page number, markdown text)] for every page of the PDF."""
     import pymupdf4llm
     chunks = pymupdf4llm.to_markdown(str(pdf), page_chunks=True, use_ocr=False)
-    pages = [(c["metadata"].get("page_number") or i + 1, c["text"]) for i, c in enumerate(chunks)]
+    return [(c["metadata"].get("page_number") or i + 1, c["text"]) for i, c in enumerate(chunks)]
 
+
+def convert_guideline(pdf: Path, md_path: Path) -> dict:
+    return write_guideline_text(pdf_pages(pdf), f"# {pdf.stem} (text version of {pdf.name})", md_path)
+
+
+def write_guideline_text(pages: list, title_line: str, md_path: Path) -> dict:
     # Running headers and footers ("Downloaded from...", author line, page numbers) repeat on most
     # pages. Drop any short line that appears on 60% or more of pages. Headings and table rows are
     # never dropped: numbered headings look alike once digits are ignored.
@@ -317,7 +328,7 @@ def convert_guideline(pdf: Path, md_path: Path) -> dict:
         body.append("")
 
     head = [
-        f"# {pdf.stem} (text version of {pdf.name})",
+        title_line,
         "",
         "Contents: line number, page, section. Read a section with read(offset=line, limit=...).",
         "",
@@ -330,6 +341,92 @@ def convert_guideline(pdf: Path, md_path: Path) -> dict:
     md_path.write_text("\n".join(head + body) + "\n", encoding="utf-8")
     words = sum(len(t.split()) for _, t in pages)
     return {"pages": len(pages), "headings": len(headings), "weak": weak, "words": words}
+
+
+# A big reference (a handbook) is written as one text file per top-level bookmark, so a case reads
+# one chapter's contents list instead of the whole book's.
+SPLIT_OVER_PAGES = 150
+MIN_CHAPTER_PAGES = 3  # shorter bookmarks (cover, title page, copyright) get no file
+CHAPTER_LIST = "chapters.txt"
+INVISIBLE = re.compile("[­​-‏⁠﻿]")  # soft hyphens and zero-width marks in bookmark titles
+
+
+def chapter_plan(pdf: Path) -> list:
+    """Top-level bookmarks as [{'title', 'first', 'last', 'file' or None}]. Pages are 1-based PDF
+    pages; 'file' is None for a bookmark too short to be worth a file. Returns [] when the PDF is
+    not one to split (150 pages or fewer, or fewer than two top-level bookmarks)."""
+    import pymupdf
+    with pymupdf.open(str(pdf)) as doc:
+        count = doc.page_count
+        tops = [(INVISIBLE.sub("", title).strip(), page) for level, title, page, *_ in doc.get_toc()
+                if level == 1 and 1 <= page <= count]
+    if count <= SPLIT_OVER_PAGES or len(tops) < 2:
+        return []
+    plan, taken = [], set()
+    for i, (title, first) in enumerate(tops):
+        last = max(first, tops[i + 1][1] - 1 if i + 1 < len(tops) else count)
+        name = None
+        if last - first + 1 >= MIN_CHAPTER_PAGES:
+            m = re.match(r"(\d+)[\s.:)-]+(.*)", title)
+            number, words = (f"{int(m.group(1)):02d}-", m.group(2)) if m else ("", title)
+            slug = re.sub(r"[^a-z0-9]+", "-", words.lower()).strip("-")[:50].strip("-") or "section"
+            base = f"{pdf.stem}-{number}{slug}"
+            name, n = base + ".md", 2
+            while name in taken:
+                name, n = f"{base}-{n}.md", n + 1
+            taken.add(name)
+        plan.append({"title": title, "first": first, "last": last, "file": name})
+    return plan
+
+
+def convert_chapters(pdf: Path, plan: list) -> dict:
+    pages = pdf_pages(pdf)
+    total = {"pages": len(pages), "headings": 0, "weak": [], "words": 0, "chapters": 0}
+    for ch in plan:
+        if not ch["file"]:
+            continue
+        part = [(num, text) for num, text in pages if ch["first"] <= num <= ch["last"]]
+        r = write_guideline_text(
+            part, f"# {ch['title']} (text version of {pdf.name}, PDF pages {ch['first']}-{ch['last']})",
+            pdf.with_name(ch["file"]))
+        total["headings"] += r["headings"]
+        total["weak"] += r["weak"]
+        total["words"] += r["words"]
+        total["chapters"] += 1
+    return total
+
+
+def write_chapter_list(folder: Path, plans: dict) -> None:
+    """chapters.txt: every chapter file in this folder with its page range and title."""
+    lines = ["Chapter files written by 'prepare'. Use a file name as \"file\" in a topic's \"references\".",
+             "Pages are PDF page numbers, as in the '--- Page N ---' markers inside each file.", ""]
+    for pdf_name, plan in plans.items():
+        lines.append(pdf_name)
+        written = [ch for ch in plan if ch["file"]]
+        width = max((len(ch["file"]) for ch in written), default=0)
+        for ch in written:
+            pages = f"p{ch['first']}-{ch['last']}"
+            lines.append(f"  {ch['file']:{width}}  {pages:10}  {ch['title']}")
+        skipped = [f"{ch['title']} (p{ch['first']})" for ch in plan if not ch["file"]]
+        if skipped:
+            lines.append(f"  no file (under {MIN_CHAPTER_PAGES} pages): " + ", ".join(skipped))
+        lines.append("")
+    (folder / CHAPTER_LIST).write_text("\n".join(lines), encoding="utf-8")
+
+
+def whole_file_pdfs(system: str) -> set:
+    """Lower-case names of the PDFs this system's topics use as one whole file. Those are never
+    split into chapters, whatever their size."""
+    path = BASE / "topics" / f"{system}.json"
+    if not path.exists():
+        return set()
+    names = set()
+    for t in json.loads(path.read_text(encoding="utf-8")).get("topics", []):
+        refs = t.get("references") if isinstance(t.get("references"), list) else []
+        for f in [t.get("guideline_file")] + [r.get("file") for r in refs if isinstance(r, dict)]:
+            if isinstance(f, str) and f.lower().endswith(".pdf") and "/" not in f:
+                names.add(f.lower())
+    return names
 
 
 def cmd_prepare(args, rng):
@@ -350,14 +447,49 @@ def cmd_prepare(args, rng):
             continue
         if several:
             print(f"{system}:")
+        whole = whole_file_pdfs(system)
+        plans = {}
         for pdf in pdfs:
             md = pdf.with_suffix(".md")
             entry = {"system": system, "file": pdf.name}
             files.append(entry)
+            plan = [] if pdf.name.lower() in whole else chapter_plan(pdf)
+            if plan:
+                plans[pdf.name] = plan
+                outs = [pdf.with_name(ch["file"]) for ch in plan if ch["file"]]
+                entry["chapters"] = len(outs)
+                if all(o.exists() and o.stat().st_mtime >= pdf.stat().st_mtime for o in outs) and not args.force:
+                    entry["state"] = "already_converted"
+                    print(f"  {pdf.name}: already converted ({len(outs)} chapter files, listed in {CHAPTER_LIST})")
+                    continue
+                print(f"  {pdf.name}: splitting into {len(outs)} chapter files; a big book takes a while...", flush=True)
+                try:
+                    r = convert_chapters(pdf, plan)
+                except Exception as e:
+                    entry.update(state="failed", error=f"{type(e).__name__}: {e}")
+                    print(f"  {pdf.name}: FAILED ({type(e).__name__}: {e}).")
+                    continue
+                done += 1
+                entry.update(state="converted", pages=r["pages"], words=r["words"], sections=r["headings"],
+                             thin_pages=r["weak"])
+                print(f"  {pdf.name}: {r['pages']} pages, {r['words']:,} words, {r['headings']} sections indexed, "
+                      f"in {r['chapters']} chapter files (listed in {CHAPTER_LIST})")
+                continue
             if md.exists() and md.stat().st_mtime >= pdf.stat().st_mtime and not args.force:
                 entry["state"] = "already_converted"
                 print(f"  {pdf.name}: already converted")
                 continue
+            if pdf.name.lower() not in whole:
+                import pymupdf
+                with pymupdf.open(str(pdf)) as doc:
+                    count = doc.page_count
+                if count > SPLIT_OVER_PAGES:
+                    msg = (f"{pdf.name} has {count} pages but no top-level bookmarks to split it by chapter, so "
+                           "it was not converted. Add bookmarks to the PDF, or name it as a whole file in the "
+                           "topic list to convert it as one file.")
+                    entry.update(state="failed", error=msg)
+                    note(f"  {msg}")
+                    continue
             try:
                 r = convert_guideline(pdf, md)
             except Exception as e:
@@ -374,6 +506,8 @@ def cmd_prepare(args, rng):
                 shown = ", ".join(map(str, r["weak"][:12])) + (" ..." if len(r["weak"]) > 12 else "")
                 msg += f"\n      little or no text on pages {shown} (usually figures or algorithm charts; normal in small numbers)"
             print(msg)
+        if plans:
+            write_chapter_list(folder, plans)
     print(f"\nConverted {done} file(s). Spot-check one: open a .md in Notepad and skim a page or two.")
     return {"converted": done, "files": files}
 
@@ -1109,7 +1243,7 @@ def main():
                "review": cmd_review}[args.cmd]
 
     if not args.json:
-        args.systems = parse_systems(args.system)
+        args.systems = parse_systems(args.system, args.cmd != "prepare")
         handler(args, rng)
         return
 
@@ -1121,7 +1255,7 @@ def main():
     code = 0
     try:
         with contextlib.redirect_stdout(buf):
-            args.systems = parse_systems(args.system)
+            args.systems = parse_systems(args.system, args.cmd != "prepare")
             out = {"ok": True, **(handler(args, rng) or {})}
     except SystemExit as e:
         if e.code in (None, 0):
