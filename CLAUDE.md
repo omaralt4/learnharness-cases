@@ -53,6 +53,11 @@ The installed plugin lives at `%APPDATA%\LearnHarness\data\plugins\case-images\d
 - `--json` prints exactly one JSON object on stdout; a failure is `{"ok": false, "error": ...}` with exit code 1. Without it, output is plain text.
 - `--seed N` goes before the command.
 - Extras (rolled per case, written into the case file as ON/off): full history and exam, exam sign deep dive, ethics or communication, recall questions, exam-style questions. **Adding an extra touches four places:** `EXTRA_LABELS` and `DEFAULT_SCENARIOS` in `pick_case.py`, `DEFAULT_SCENARIOS` and `LABELS` in `backend.cjs` (the Mix tab then shows it by itself), `scenarios.json`, and a paragraph in `10-doctrine.md` telling the agent what the extra means (only when the user supplies or approves the text). Adding one changes which cases a given `--seed` produces.
+- **Topic fields** (only `id` and `topic` are required; `topics/cardio.json` uses the old pair and must keep working unchanged):
+  - `guideline` + `guideline_file`: the original single reference. A topic without a `references` key gets exactly the old seed text.
+  - `references`: a list of `{"file", "name", "region"}`. `file` is a PDF (read through its converted `.md`) or a chapter `.md` from `chapters.txt`; `othersystem/file` borrows from another system's folder. Each reference gets its own neutral link (`case_…_ref.md`, `_ref2.md`, …). A non-US `region` (e.g. `"UK"`) labels it `Reference (UK)` and adds the "grade against US practice" sentence (`region_note()`); US or no region is labelled `Current guideline`.
+  - `complaint`: written into the seed as the presenting complaint to open with.
+  - Topic files are read as `utf-8-sig`, because Notepad and PowerShell can add a BOM.
 - Progress keys are `system/id`. `load_progress()` re-keys bare ids from older files under `cardio` and saves the original as `progress.json.bak` once.
 
 ## Rules that must not break

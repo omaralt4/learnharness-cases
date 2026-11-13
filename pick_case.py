@@ -53,6 +53,7 @@ Folder layout (next to this script):
   progress.json           tracker (created automatically)
 """
 import argparse
+import glob
 import json
 import random
 import re
@@ -113,7 +114,16 @@ def load_topics(system: str) -> dict:
     path = BASE / "topics" / f"{system}.json"
     if not path.exists():
         sys.exit(f"No topic list at {path}")
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))  # utf-8-sig: Notepad may add a BOM
+    except json.JSONDecodeError as e:
+        sys.exit(f"topics/{path.name} is not valid JSON ({e}). A missing comma or quote is the usual cause.")
+    if not isinstance(data, dict) or not isinstance(data.get("topics"), list):
+        sys.exit(f"topics/{path.name} needs a \"topics\" list, like topics/cardio.json.")
+    for t in data["topics"]:
+        if not isinstance(t, dict) or not t.get("id") or not t.get("topic"):
+            sys.exit(f"topics/{path.name}: every topic needs an \"id\" and a \"topic\".")
+    return data
 
 
 def all_systems() -> list:
@@ -234,6 +244,34 @@ def guideline_path(system: str, topic: dict) -> Path:
     return BASE / "guidelines" / system / topic["guideline_file"]
 
 
+def topic_references(system: str, topic: dict) -> list:
+    """Everything a topic points at, as [{'name', 'file', 'region', 'path'}]: the old
+    'guideline' + 'guideline_file' pair first (when present), then each entry of 'references'.
+    'file' is a PDF (read through its converted .md) or a chapter .md written by prepare. It lives
+    in guidelines/<system>/; 'othersystem/file' borrows one from another system's folder."""
+    refs = []
+    if topic.get("guideline_file"):
+        refs.append({"name": topic.get("guideline", ""), "file": topic["guideline_file"], "region": ""})
+    for r in topic.get("references") or []:
+        if isinstance(r, dict) and isinstance(r.get("file"), str) and r["file"].strip():
+            refs.append({"name": str(r.get("name") or ""), "file": r["file"].strip(),
+                         "region": str(r.get("region") or "").strip()})
+    for r in refs:
+        folder, _, name = r["file"].replace("\\", "/").rpartition("/")
+        r["path"] = BASE / "guidelines" / (folder or system) / name
+    return refs
+
+
+def is_us(region: str) -> bool:
+    return region.upper() in ("", "US", "USA")
+
+
+def region_note(region: str) -> str:
+    return (f"This reference reflects {region} practice. Step 2 tests current US practice: where they differ "
+            "(drugs, doses, thresholds, pathways), grade against US practice, use US drug names, and name the "
+            "difference at conclusion.")
+
+
 def neutral_link(src: Path, dest: Path) -> Path:
     """Give the guideline a per-case name with no topic in it. The learner sees file paths in
     tool-call headlines, so 'svt-2015.md' would give the diagnosis away. A hard link costs no disk
@@ -249,11 +287,12 @@ def neutral_link(src: Path, dest: Path) -> Path:
     return dest
 
 
-def guideline_reference(gpath: Path, case_path: Path) -> tuple:
-    """(seed text, state) where state is 'text', 'pdf' or 'missing'."""
+def guideline_reference(gpath: Path, case_path: Path, number: int = 1) -> tuple:
+    """(seed text, state) where state is 'text', 'pdf' or 'missing'. Each reference of a case gets
+    its own neutral link: case_..._ref.md, case_..._ref2.md, ..."""
     md = gpath.with_suffix(".md")
     if md.exists():
-        ref = neutral_link(md, case_path.with_name(case_path.stem + "_ref.md"))
+        ref = neutral_link(md, case_path.with_name(f"{case_path.stem}_ref{'' if number == 1 else number}.md"))
         return (
             f"Reference guideline text: {ref}\n"
             "The top of the file is a contents list giving each section's line number. Read the contents "
@@ -421,7 +460,7 @@ def whole_file_pdfs(system: str) -> set:
     if not path.exists():
         return set()
     names = set()
-    for t in json.loads(path.read_text(encoding="utf-8")).get("topics", []):
+    for t in load_topics(system)["topics"]:
         refs = t.get("references") if isinstance(t.get("references"), list) else []
         for f in [t.get("guideline_file")] + [r.get("file") for r in refs if isinstance(r, dict)]:
             if isinstance(f, str) and f.lower().endswith(".pdf") and "/" not in f:
@@ -823,12 +862,25 @@ def cmd_common(args, rng):
     made = []
     with_ecg = []
     for topic in chosen:
-        gpath = guideline_path(topic["_system"], topic)
         sc = roll_scenario(scenarios, rng)
         dest = new_case_path()
-        ref, ref_state = guideline_reference(gpath, dest)
-        missing += ref_state == "missing"
-        unconverted += ref_state == "pdf"
+        refs = topic_references(topic["_system"], topic)
+        states, blocks = [], []
+        for i, r in enumerate(refs, 1):
+            text, state = guideline_reference(r["path"], dest, i)
+            states.append(state)
+            if "references" not in topic:
+                blocks.append(f"Current guideline: {r['name']}\n{text}\n")  # the old single-guideline seed, unchanged
+                continue
+            label = "Current guideline" if is_us(r["region"]) else f"Reference ({r['region']})"
+            blocks.append(f"{label}: {r['name']}\n{text}\n" + ("" if is_us(r["region"]) else region_note(r["region"]) + "\n"))
+        if not refs:
+            blocks.append("Reference: none given for this topic. Work from current US practice, and at the case's "
+                          "conclusion say which recommendations you could not check against a text.\n")
+        missing += "missing" in states
+        unconverted += "pdf" in states
+        has_us = "references" not in topic or any(is_us(r["region"]) for r in refs)
+        complaint = topic.get("complaint")
 
         ecg_block, ecg_frame = (None, None)
         if sc["want_ecg"] and topic.get("ecg_codes"):
@@ -844,14 +896,15 @@ def cmd_common(args, rng):
             "# Case seed (for the agent only)\n\n"
             "This is a built case. Follow the 'Built cases' rules in rounds mode.\n\n"
             f"Topic: {topic['topic']}\n"
-            f"Patient frame: {frame}\n"
+            + (f"Presenting complaint: {complaint} (open the case with this complaint)\n" if complaint else "")
+            + f"Patient frame: {frame}\n"
             f"Encounter: {enc_line}\n"
             f"Extras:\n{extras}\n\n"
-            f"Current guideline: {topic['guideline']}\n"
-            f"{ref}\n\n"
+            + "\n".join(blocks) + "\n"
             + (ecg_block + "\n" if ecg_block else "")
             + "Build a common, typical presentation of this topic as a Step 2 question or a real "
-            "patient would show it. Grade all management against the current guideline.\n",
+            "patient would show it. Grade all management against "
+            + ("the current guideline.\n" if has_us else "current US practice.\n"),
             encoding="utf-8",
         )
         built[topic["_key"]] = built.get(topic["_key"], 0) + 1
@@ -1112,16 +1165,18 @@ def system_status(system: str, built: dict, show_topics: bool) -> dict:
         return built.get(prefix + t["id"], 0)
 
     done = [t for t in topics if count(t) > 0]
+    refs = [r for t in topics for r in topic_references(system, t)]
     missing = {}
-    for t in topics:
-        if not guideline_path(system, t).exists():
-            missing.setdefault(t["guideline_file"], t["guideline"])
-    unconverted = sorted({t["guideline_file"] for t in topics
-                          if guideline_path(system, t).exists()
-                          and not guideline_path(system, t).with_suffix(".md").exists()})
+    for r in refs:
+        if not r["path"].exists():
+            missing.setdefault(r["file"], r["name"])
+    unconverted = sorted({r["file"] for r in refs
+                          if r["path"].exists() and not r["path"].with_suffix(".md").exists()})
     folder = BASE / "guidelines" / system
-    expected = {t["guideline_file"].lower() for t in topics}
-    strays = sorted(p.name for p in folder.glob("*.pdf") if p.name.lower() not in expected) if folder.exists() else []
+    expected = {r["path"].name.lower() for r in refs}
+    # A PDF that prepare split into chapter files is in use even though no topic names the PDF itself.
+    strays = sorted(p.name for p in folder.glob("*.pdf") if p.name.lower() not in expected
+                    and not any(folder.glob(glob.escape(p.stem) + "-*.md"))) if folder.exists() else []
     out = {
         "system": system,
         "topics_total": len(topics),
