@@ -1,0 +1,24 @@
+{
+  "_how_to_edit": "Encounter weights are relative: they don't need to add up to 100, a bigger number just means more often. Set one to 0 to switch it off. 'extras' are independent chances from 0 to 1 per case (0.25 = one case in four). Save the file and the next case uses the new values. 'review': a topic whose last case scored below weak_below (0.7 = 70%) comes back once after_days have passed since that case. 'order': \"unseen_first\" works through every unseen topic before reviews; \"review_first\" puts due reviews ahead of unseen topics.",
+  "encounters": {
+    "ed_first_presentation": 35,
+    "ward_called_by_nurse": 15,
+    "ward_round_day_2": 15,
+    "handover": 10,
+    "clinic_follow_up": 15,
+    "clinic_new_referral": 10
+  },
+  "extras": {
+    "full_history_and_exam": 0.25,
+    "exam_sign_deep_dive": 0.3,
+    "ethics_or_communication": 0.1,
+    "exam_style_questions": 0.5,
+    "ecg_when_topic_has_one": 0.8,
+    "handover_contains_an_error": 0.5
+  },
+  "review": {
+    "weak_below": 0.7,
+    "after_days": 2,
+    "order": "unseen_first"
+  }
+}

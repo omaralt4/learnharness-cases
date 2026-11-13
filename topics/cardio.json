@@ -1,0 +1,324 @@
+{
+  "system": "cardio",
+  "note": "Common Step 2 CK cardiology presentations. 'guideline_file' is the PDF you save in guidelines/cardio/. 'verified' marks whether the guideline version was checked as current in Nov 2026; check the false ones yourself before relying on them. 'ecg_codes' are PTB-XL SCP-ECG codes; an ECG with one of them is attached to the case (empty list = no ECG). Edit freely. Optional 'ecg_rate' [min, max] in beats/min (null = no limit) makes the script pick only tracings in that range, e.g. AF with RVR needs a fast one.",
+  "complaints": [
+    "chest pain",
+    "dyspnea",
+    "shortness of breath",
+    "syncope",
+    "palpitations",
+    "edema",
+    "hypotension",
+    "fatigue",
+    "fever"
+  ],
+  "topics": [
+    {
+      "id": "stemi",
+      "topic": "STEMI",
+      "guideline": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
+      "guideline_file": "acs-2025.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "INJAS",
+        "INJAL",
+        "INJIN",
+        "INJLA",
+        "INJIL"
+      ]
+    },
+    {
+      "id": "nste_acs",
+      "topic": "NSTE-ACS (NSTEMI or unstable angina)",
+      "guideline": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
+      "guideline_file": "acs-2025.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "ISCAL",
+        "ISCAS",
+        "ISCIN",
+        "ISCIL",
+        "ISCLA",
+        "ISCAN"
+      ]
+    },
+    {
+      "id": "cardiogenic_shock",
+      "topic": "Cardiogenic shock complicating acute MI",
+      "guideline": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
+      "guideline_file": "acs-2025.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "INJAS",
+        "INJAL",
+        "INJIN"
+      ]
+    },
+    {
+      "id": "mi_mechanical",
+      "topic": "Mechanical complication after MI (papillary muscle rupture, VSD or free wall rupture)",
+      "guideline": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
+      "guideline_file": "acs-2025.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "INJIN",
+        "INJIL",
+        "IMI"
+      ]
+    },
+    {
+      "id": "stable_angina",
+      "topic": "Stable angina / chronic coronary disease, including the chest pain workup",
+      "guideline": "2023 AHA/ACC Guideline for the Management of Patients With Chronic Coronary Disease (with the 2021 AHA/ACC Chest Pain Guideline)",
+      "guideline_file": "ccd-2023.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "NORM",
+        "IMI",
+        "ASMI"
+      ]
+    },
+    {
+      "id": "adhf",
+      "topic": "Acute decompensated heart failure with reduced EF",
+      "guideline": "2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure",
+      "guideline_file": "hf-2022.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "CLBBB",
+        "LVH",
+        "ASMI",
+        "AFIB"
+      ]
+    },
+    {
+      "id": "hfref_gdmt",
+      "topic": "Chronic HFrEF: starting and titrating guideline-directed medical therapy",
+      "guideline": "2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure",
+      "guideline_file": "hf-2022.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "CLBBB",
+        "ASMI",
+        "LVH"
+      ]
+    },
+    {
+      "id": "hfpef",
+      "topic": "HFpEF",
+      "guideline": "2022 AHA/ACC/HFSA Heart Failure Guideline plus the 2026 ACC Expert Consensus Decision Pathway on HFpEF",
+      "guideline_file": "hfpef-ecdp-2026.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "LVH",
+        "AFIB"
+      ]
+    },
+    {
+      "id": "af_rvr",
+      "topic": "Atrial fibrillation with rapid ventricular response",
+      "guideline": "2023 ACC/AHA/ACCP/HRS Guideline for the Diagnosis and Management of Atrial Fibrillation",
+      "guideline_file": "af-2023.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "AFIB"
+      ],
+      "ecg_rate": [
+        110,
+        null
+      ]
+    },
+    {
+      "id": "af_outpatient",
+      "topic": "New atrial fibrillation in clinic: stroke risk, anticoagulation, rate vs rhythm",
+      "guideline": "2023 ACC/AHA/ACCP/HRS Guideline for the Diagnosis and Management of Atrial Fibrillation",
+      "guideline_file": "af-2023.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "AFIB",
+        "AFLT"
+      ]
+    },
+    {
+      "id": "svt",
+      "topic": "Paroxysmal supraventricular tachycardia",
+      "guideline": "2015 ACC/AHA/HRS Guideline for the Management of Adult Patients With Supraventricular Tachycardia",
+      "guideline_file": "svt-2015.pdf",
+      "verified": false,
+      "ecg_codes": [
+        "SVTAC",
+        "PSVT"
+      ],
+      "ecg_rate": [
+        140,
+        null
+      ]
+    },
+    {
+      "id": "brady",
+      "topic": "Symptomatic bradycardia or high-grade AV block",
+      "guideline": "2018 ACC/AHA/HRS Guideline on the Evaluation and Management of Patients With Bradycardia and Cardiac Conduction Delay",
+      "guideline_file": "brady-2018.pdf",
+      "verified": false,
+      "ecg_codes": [
+        "3AVB",
+        "2AVB",
+        "SBRAD"
+      ],
+      "ecg_rate": [
+        null,
+        55
+      ]
+    },
+    {
+      "id": "syncope",
+      "topic": "Syncope",
+      "guideline": "2017 ACC/AHA/HRS Guideline for the Evaluation and Management of Patients With Syncope",
+      "guideline_file": "syncope-2017.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "3AVB",
+        "2AVB",
+        "WPW",
+        "LNGQT",
+        "SBRAD"
+      ]
+    },
+    {
+      "id": "cardiac_arrest",
+      "topic": "Cardiac arrest or unstable ventricular tachycardia",
+      "guideline": "Current AHA Guidelines for CPR and Emergency Cardiovascular Care (ACLS)",
+      "guideline_file": "acls.pdf",
+      "verified": false,
+      "ecg_codes": []
+    },
+    {
+      "id": "aortic_stenosis",
+      "topic": "Aortic stenosis",
+      "guideline": "2020 ACC/AHA Guideline for the Management of Patients With Valvular Heart Disease",
+      "guideline_file": "valve-2020.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "LVH"
+      ]
+    },
+    {
+      "id": "mitral_regurg",
+      "topic": "Mitral regurgitation (chronic primary or secondary)",
+      "guideline": "2020 ACC/AHA Guideline for the Management of Patients With Valvular Heart Disease",
+      "guideline_file": "valve-2020.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "LAO/LAE",
+        "AFIB"
+      ]
+    },
+    {
+      "id": "mitral_stenosis",
+      "topic": "Mitral stenosis (rheumatic)",
+      "guideline": "2020 ACC/AHA Guideline for the Management of Patients With Valvular Heart Disease",
+      "guideline_file": "valve-2020.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "LAO/LAE",
+        "AFIB",
+        "RVH"
+      ]
+    },
+    {
+      "id": "endocarditis",
+      "topic": "Infective endocarditis",
+      "guideline": "2026 AHA Scientific Statement: Infective Endocarditis: Diagnosis, Antibiotic Therapy, and Management (uses 2023 Duke-ISCVID criteria)",
+      "guideline_file": "endocarditis-2026.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "NORM",
+        "1AVB"
+      ]
+    },
+    {
+      "id": "pericarditis",
+      "topic": "Acute pericarditis",
+      "guideline": "2025 ESC Guidelines for the management of myocarditis and pericarditis (no current ACC/AHA guideline)",
+      "guideline_file": "myoperi-esc-2025.pdf",
+      "verified": true,
+      "ecg_codes": []
+    },
+    {
+      "id": "tamponade",
+      "topic": "Cardiac tamponade",
+      "guideline": "2025 ESC Guidelines for the management of myocarditis and pericarditis (no current ACC/AHA guideline)",
+      "guideline_file": "myoperi-esc-2025.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "LVOLT"
+      ]
+    },
+    {
+      "id": "myocarditis",
+      "topic": "Acute myocarditis",
+      "guideline": "2025 ESC Guidelines for the management of myocarditis and pericarditis (no current ACC/AHA guideline)",
+      "guideline_file": "myoperi-esc-2025.pdf",
+      "verified": true,
+      "ecg_codes": []
+    },
+    {
+      "id": "aortic_dissection",
+      "topic": "Acute aortic dissection",
+      "guideline": "2022 ACC/AHA Guideline for the Diagnosis and Management of Aortic Disease",
+      "guideline_file": "aortic-2022.pdf",
+      "verified": false,
+      "ecg_codes": [
+        "NORM",
+        "LVH"
+      ]
+    },
+    {
+      "id": "htn_emergency",
+      "topic": "Hypertensive emergency",
+      "guideline": "2025 AHA/ACC Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults",
+      "guideline_file": "htn-2025.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "LVH"
+      ]
+    },
+    {
+      "id": "htn_outpatient",
+      "topic": "Newly diagnosed hypertension in clinic, including screening for secondary causes",
+      "guideline": "2025 AHA/ACC Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults",
+      "guideline_file": "htn-2025.pdf",
+      "verified": true,
+      "ecg_codes": [
+        "LVH"
+      ]
+    },
+    {
+      "id": "dyslipidemia",
+      "topic": "Dyslipidemia and primary prevention risk assessment",
+      "guideline": "2026 ACC/AHA Guideline on the Management of Dyslipidemia",
+      "guideline_file": "lipids-2026.pdf",
+      "verified": true,
+      "ecg_codes": []
+    },
+    {
+      "id": "pad",
+      "topic": "Peripheral artery disease or acute limb ischemia",
+      "guideline": "2024 ACC/AHA Guideline for the Management of Lower Extremity Peripheral Artery Disease",
+      "guideline_file": "pad-2024.pdf",
+      "verified": false,
+      "ecg_codes": []
+    },
+    {
+      "id": "hcm",
+      "topic": "Hypertrophic cardiomyopathy",
+      "guideline": "2024 AHA/ACC Guideline for the Management of Hypertrophic Cardiomyopathy",
+      "guideline_file": "hcm-2024.pdf",
+      "verified": false,
+      "ecg_codes": [
+        "LVH",
+        "SEHYP"
+      ]
+    }
+  ]
+}

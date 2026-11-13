@@ -1,0 +1,18 @@
+# Generated cases: full of spoilers
+/cases/
+# Guideline PDFs and their text versions belong to the publishers
+/guidelines/
+# Downloaded PTB-XL ECG recordings
+/data/
+# Personal study data
+/progress.json
+/progress.json.bak
+/case_log.jsonl
+/review.md
+# Machine-specific
+/python_path.txt
+# Data the app writes next to the plugin
+/plugin/case-images/data/
+# Python caches
+__pycache__/
+*.py[cod]
