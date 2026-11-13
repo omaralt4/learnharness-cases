@@ -97,6 +97,8 @@ DEFAULT_SCENARIOS = {
     "extras": {"full_history_and_exam": 0.25, "exam_sign_deep_dive": 0.30, "ethics_or_communication": 0.10,
                "recall_questions": 0.20, "exam_style_questions": 0.50, "ecg_when_topic_has_one": 0.80, "handover_contains_an_error": 0.50},
     "review": {"weak_below": 0.7, "after_days": 2, "order": "unseen_first"},
+    # Relative weight of a topic's optional "tier". A topic with no tier has weight 1.
+    "tiers": {"common": 3, "cant_miss": 2, "rare": 1},
 }
 
 
@@ -575,7 +577,11 @@ def load_scenarios() -> dict:
         sys.exit(f"{SCENARIOS.name}: review 'after_days' must be 0 or more.")
     if review["order"] not in ("unseen_first", "review_first"):
         sys.exit(f"{SCENARIOS.name}: review 'order' must be \"unseen_first\" or \"review_first\".")
-    return {"encounters": enc, "extras": extras, "review": review}
+    tiers = {**DEFAULT_SCENARIOS["tiers"], **{k: v for k, v in s.get("tiers", {}).items() if not k.startswith("_")}}
+    for k, v in tiers.items():
+        if not isinstance(v, (int, float)) or isinstance(v, bool) or v <= 0:
+            sys.exit(f"{SCENARIOS.name}: tier '{k}' needs a weight above 0 (it is {v}).")
+    return {"encounters": enc, "extras": extras, "review": review, "tiers": tiers}
 
 
 def roll_scenario(sc: dict, rng: random.Random) -> dict:
@@ -827,10 +833,18 @@ def topic_history(progress: dict, log: dict) -> dict:
     return hist
 
 
-def pick_topics(topics: list, built: dict, n: int, rng: random.Random, hist: dict = None, review: dict = None) -> list:
-    """Never-seen topics and weak topics that are due again (weakest first), in the order the
-    'review' settings choose; then the least-covered. Random among ties."""
+def topic_weight(topic: dict, tiers: dict) -> float:
+    """Weight of the topic's tier from scenarios.json; 1 for a topic with no tier (or an unknown one)."""
+    return tiers.get(topic.get("tier"), 1) if isinstance(topic.get("tier"), str) else 1
+
+
+def pick_topics(topics: list, built: dict, n: int, rng: random.Random, hist: dict = None, review: dict = None,
+                tiers: dict = None) -> list:
+    """Never-seen topics (heavier tier first) and weak topics that are due again (weakest first),
+    in the order the 'review' settings choose; then the least-covered, meaning the lowest cases
+    built divided by tier weight. Random among ties. With every weight 1 the tier changes nothing."""
     hist, review = hist or {}, review or DEFAULT_SCENARIOS["review"]
+    tiers = tiers or {}
     now = datetime.now()
     pool = topics[:]
     rng.shuffle(pool)
@@ -840,11 +854,12 @@ def pick_topics(topics: list, built: dict, n: int, rng: random.Random, hist: dic
         score, last = h.get("last_score"), h.get("last_built")
         due = last is None or (now - last).total_seconds() >= review["after_days"] * 86400
         unseen_rank, weak_rank = (0, 1) if review.get("order", "unseen_first") == "unseen_first" else (1, 0)
+        weight = topic_weight(t, tiers)
         if built.get(t["_key"], 0) == 0:
-            return (unseen_rank, 0.0, 0)
+            return (unseen_rank, -weight, 0)
         if score is not None and score < review["weak_below"] and due:
             return (weak_rank, score, 0)
-        return (2, 0.0, built.get(t["_key"], 0))
+        return (2, 0.0, built.get(t["_key"], 0) / weight)
 
     pool.sort(key=key)
     return pool[:n]
@@ -857,7 +872,7 @@ def cmd_common(args, rng):
     built = progress.setdefault("built", {})
     enc_counts = progress.setdefault("encounters", {})
     hist = topic_history(progress, read_log())
-    chosen = pick_topics(topics, built, args.batch, rng, hist, scenarios["review"])
+    chosen = pick_topics(topics, built, args.batch, rng, hist, scenarios["review"], scenarios["tiers"])
     missing = unconverted = 0
     made = []
     with_ecg = []
