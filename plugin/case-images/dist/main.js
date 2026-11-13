@@ -501,7 +501,7 @@ function mountCases(ctx, container, signal) {
         weakShown);
 
       body.replaceChildren(
-        s.exists ? null : h("p", { class: "rt-muted", text: "scenarios.json doesn't exist yet. These are the defaults; Save creates the file." }),
+        s.exists ? "" : h("p", { class: "rt-muted", text: "scenarios.json doesn't exist yet. These are the defaults; Save creates the file." }),
         h("h2", { text: "Encounters" }),
         h("p", { class: "rt-muted", text: "Weights are relative: a bigger number means more often, 0 switches one off. The last column is the share of cases each one gets." }),
         encounterGrid,
