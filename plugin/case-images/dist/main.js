@@ -25,7 +25,7 @@ function openImageViewer(doc, src, alt) {
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-label", alt || "Case image, full screen");
   overlay.tabIndex = -1;
-  overlay.setAttribute("style", "position:fixed;inset:0;z-index:2147483647;background:#000;overflow:hidden;touch-action:none;cursor:grab;outline:none;");
+  overlay.setAttribute("style", "position:fixed;inset:0;z-index:2147483647;background:#000;overflow:hidden;touch-action:none;cursor:grab;outline:none;-webkit-app-region:no-drag;");
   const img = doc.createElement("img");
   img.src = src;
   img.alt = alt || "Case image";
@@ -35,7 +35,10 @@ function openImageViewer(doc, src, alt) {
   close.type = "button";
   close.textContent = "Close";
   close.setAttribute("aria-label", "Close full screen");
-  close.setAttribute("style", "position:absolute;top:12px;right:12px;z-index:1;padding:6px 14px;font:inherit;font-size:13px;color:#fff;background:rgba(40,40,40,0.85);border:1px solid rgba(255,255,255,0.4);border-radius:6px;cursor:pointer;");
+  // The app's window has no title bar of its own: the top strip of the page drags the window and
+  // the minimize/maximize/close buttons are drawn over its top right corner, and both swallow
+  // clicks. So the overlay opts out of dragging and Close sits below that strip.
+  close.setAttribute("style", "position:absolute;top:48px;right:12px;z-index:1;-webkit-app-region:no-drag;padding:6px 14px;font:inherit;font-size:13px;color:#fff;background:rgba(40,40,40,0.85);border:1px solid rgba(255,255,255,0.4);border-radius:6px;cursor:pointer;");
   const hint = doc.createElement("div");
   hint.textContent = "Scroll to zoom · drag to move · double-click to reset · Esc to close";
   hint.setAttribute("style", "position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:12px;color:rgba(255,255,255,0.65);pointer-events:none;");
