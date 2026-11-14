@@ -2,7 +2,7 @@
 
 A rounds-style case picker for [LearnHarness](https://github.com/amosblomqvist/learnharness) Practice sessions, built for USMLE Step 2 study.
 
-A Python script (`pick_case.py`) writes a case file that only the practice agent reads. You start a Practice session, paste the opening message, and work the case without knowing the diagnosis. A LearnHarness plugin ("Rounds tools") shows ECGs inline, logs how each case went so weak topics come back for review, and adds a **Cases** page to the app that does everything the launchers do.
+A Python script (`pick_case.py`) writes a case file that only the practice agent reads. You start a Practice session, paste the opening message, and work the case without knowing the diagnosis. A LearnHarness plugin ("Rounds tools") shows ECGs inline (with a full-screen view you can zoom and pan), lets the agent search a case's reference without showing you what it searched for, logs how each case went so weak topics come back for review, and adds a **Cases** page to the app that does everything the launchers do.
 
 Nothing here shows a case's topic, diagnosis or guideline before you finish it. File names are neutral on purpose.
 
@@ -19,6 +19,11 @@ After installing the plugin (see Setup), open **Cases** from the sidebar in Lear
 - **Guidelines**: converts guideline PDFs to text. A book is split into one file per chapter.
 
 The plugin's settings page (the gear on the Cases page) has the **Cases folder** and the **Python path**. Leave both empty to use `Documents\LearnHarness-cases` and the Python the launchers would find.
+
+## During a case
+
+- **ECGs and other images** appear inline. Click one to switch between fit-to-width and full size. The **Fullscreen** button, or a double-click, opens it on a black full-screen view: scroll to zoom in where the cursor is, drag to move, double-click to reset, Esc or Close to leave.
+- **"Searched case reference · N matches"** means the agent looked something up in the case's guideline. You see only the count; the search words and the matching text stay hidden so they can't give the case away. Don't expand tool lines (the small arrow next to `READ` and similar) during a case: the app shows a tool's full input and output there, and no plugin can turn that off.
 
 ## Folder layout
 

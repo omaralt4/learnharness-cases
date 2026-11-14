@@ -4,14 +4,64 @@
 //                  case_*.png/.jpg/.jpeg inside a folder named "cases", up to 8 MB.
 // log_case_result  appends one line per finished case to case_log.jsonl in the folder that
 //                  contains "cases". It writes nothing else, anywhere.
+// search_case_ref  searches a case's own reference files (<case>_ref*.md next to the case file)
+//                  for a pattern. It reads nothing else, and its renderer never shows the pattern
+//                  or the matches, so a search can't give the diagnosis away.
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const TYPES = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" };
 const IMAGE_NAME = /^case_[A-Za-z0-9_-]+\.(png|jpe?g)$/i;
 const CASE_NAME = /^case_[A-Za-z0-9_-]+\.md$/i;
 const VERDICTS = ["correct", "partial", "wrong"];
+const MAX_REF_BYTES = 20 * 1024 * 1024;
+const MAX_LINE = 400;          // characters of a line that are returned (a window around the match)
+const MAX_SEARCHED = 20000;    // characters of a line that are searched; guideline paragraphs are one long line
+const MAX_RESULT_CHARS = 24000;
+const SEARCH_TIMEOUT_MS = 2000;
+
+const wholeNumber = (v, lo, hi, fallback) => (Number.isInteger(v) ? Math.min(hi, Math.max(lo, v)) : fallback);
+
+/** This case's reference files: case_<stamp>_<hex>_ref.md, _ref2.md, ... next to the case file.
+ * Only regular files count (a hard link is one; a symbolic link is not followed). */
+async function caseReferenceFiles(caseFile) {
+  const dir = path.dirname(caseFile);
+  const stem = path.basename(caseFile, path.extname(caseFile)).toLowerCase();
+  let names;
+  try { names = await fs.promises.readdir(dir); } catch { return []; }
+  const found = [];
+  for (const name of names) {
+    const lower = name.toLowerCase();
+    if (!lower.startsWith(stem + "_ref") || !/^_ref\d*\.md$/.test(lower.slice(stem.length))) continue;
+    const file = path.join(dir, name);
+    let stat;
+    try { stat = await fs.promises.lstat(file); } catch { continue; }
+    if (!stat.isFile() || stat.size > MAX_REF_BYTES) continue;
+    found.push({ file, suffix: lower.slice(stem.length + 1, -3) }); // "ref", "ref2", ...
+  }
+  const order = f => Number(f.suffix.slice(3)) || 1;
+  return found.sort((a, b) => order(a) - order(b));
+}
+
+/** [line number (0-based), position of the match in that line] for each matching line. Runs in
+ * a vm with a time limit, so a pattern that backtracks forever is stopped instead of hanging
+ * the plugin. */
+function matchingLines(lines, pattern, limit) {
+  try {
+    return vm.runInNewContext(
+      "const re = new RegExp(pattern, 'i'); const hits = [];" +
+      "for (let i = 0; i < lines.length && hits.length < limit; i++) { const at = lines[i].search(re); if (at >= 0) hits.push([i, at]); } hits;",
+      { lines, pattern, limit }, { timeout: SEARCH_TIMEOUT_MS });
+  } catch (e) {
+    if (e && e.code === "ERR_SCRIPT_EXECUTION_TIMEOUT") throw new Error("That query took too long to run. Use a simpler one.");
+    // V8 says "Invalid regular expression: /<the query>/i: <reason>". Keep the reason only: an error
+    // text can end up on screen, and the query must not.
+    const reason = String(e && e.message ? e.message : e).split(": ").pop();
+    throw new Error(`The query is not a valid regular expression (${reason.includes(pattern) ? "syntax error" : reason}).`);
+  }
+}
 
 function checkPath(raw, nameRule, what) {
   if (typeof raw !== "string" || !raw.trim()) throw new Error(`Give the ${what}'s full file path.`);
@@ -31,11 +81,17 @@ exports.activate = ctx => {
   ctx.registerInstructions({
     agents: ["practice"],
     text:
-      "Two rounds tools are available. show_case_image: when a case file attaches an image (an ECG, a film) and the " +
+      "Three rounds tools are available. show_case_image: when a case file attaches an image (an ECG, a film) and the " +
       "learner orders that test, call it with the image's path exactly as the case file gives it; the learner sees the " +
       "image inline, so do not also print the path, describe it or interpret it. If it fails, give the path as inline code. " +
       "log_case_result: call it exactly once per case, as the very last step after the case has closed (after the " +
-      "one-liner, any exam-style questions and retests), with the case file's path from the opening message.",
+      "one-liner, any exam-style questions and retests), with the case file's path from the opening message. " +
+      "search_case_ref: to find a threshold, drug or section in a case's reference files, use this instead of grep. " +
+      "Never run grep or find on a case file or its references while the case is open: the learner sees the search " +
+      "words of those tools, and the words give the diagnosis away. Give search_case_ref the case file's path and a " +
+      "query; it searches every reference of that case and returns matching lines with the file (ref, ref2, ...) and " +
+      "line number, and the learner sees only that a search happened. Then read the lines you need from that reference " +
+      "file with offset and limit.",
   });
 
   ctx.registerTools({
@@ -145,6 +201,87 @@ exports.activate = ctx => {
           return {
             content: [{ type: "text", text: "Logged. The case is complete." }],
             details: { kind: "log", ...entry },
+          };
+        },
+      },
+      {
+        name: "search_case_ref",
+        label: "Search case reference",
+        description:
+          "Search the current case's reference files (the guideline or chapter text the case file points at) for a " +
+          "regular expression, case-insensitive. Use it instead of grep or find, which show the learner what you searched " +
+          "for: here the learner sees only that a search was made, never the query or the matches. Returns matching lines as '<ref>:L<line>: text', where <ref> is the ending " +
+          "of the reference file's name (ref = case_..._ref.md, ref2 = case_..._ref2.md). Follow up by reading that file " +
+          "at that line with offset and limit.",
+        parameters: {
+          type: "object",
+          properties: {
+            case_file: { type: "string", minLength: 1, maxLength: 1000, description: "Absolute path of this case's file (case_….md), as given in the opening message." },
+            // Named "query", not "pattern": the host's own tool card prints input.pattern as its headline,
+            // and that card is what shows if this plugin's renderer is ever not running.
+            query: { type: "string", minLength: 1, maxLength: 200, description: "Regular expression, matched per line, case-insensitive. Plain words work too." },
+            context: { type: "integer", minimum: 0, maximum: 5, description: "Lines of context before and after each match. Default 2." },
+            max_matches: { type: "integer", minimum: 1, maximum: 100, description: "Stop after this many matches. Default 30." },
+          },
+          required: ["case_file", "query"],
+          additionalProperties: false,
+        },
+        execute: async (_id, input, signal) => {
+          if (signal.aborted || ctx.signal.aborted) throw new Error("Cancelled");
+          const caseFile = checkPath(input.case_file, CASE_NAME, "case file");
+          const pattern = typeof input.query === "string" ? input.query : "";
+          if (!pattern.trim()) throw new Error("Give a query to search for.");
+          if (pattern.length > 200) throw new Error("The query can be at most 200 characters.");
+          const context = wholeNumber(input.context, 0, 5, 2);
+          const maxMatches = wholeNumber(input.max_matches, 1, 100, 30);
+          const refs = await caseReferenceFiles(caseFile);
+          if (!refs.length) {
+            return {
+              content: [{ type: "text", text: "This case has no reference text files to search. Work from the guideline the case file names." }],
+              details: { kind: "search", matches: 0, files: 0 },
+            };
+          }
+          const out = [];
+          let total = 0, size = 0, cut = false;
+          for (const ref of refs) {
+            if (signal.aborted) throw new Error("Cancelled");
+            if (total >= maxMatches) { cut = true; break; }
+            const lines = (await fs.promises.readFile(ref.file, "utf8")).split(/\r?\n/).map(l => (l.length > MAX_SEARCHED ? l.slice(0, MAX_SEARCHED) : l));
+            const hits = matchingLines(lines, pattern, maxMatches - total + 1);
+            if (hits.length > maxMatches - total) { cut = true; hits.length = maxMatches - total; }
+            total += hits.length;
+            const matchAt = new Map(hits);
+            // A long line is returned as a window around its match, so the match is always in view.
+            const shown = i => {
+              const full = lines[i];
+              if (full.length <= MAX_LINE) return full;
+              const start = Math.max(0, Math.min((matchAt.get(i) || 0) - 120, full.length - MAX_LINE));
+              return (start ? "…" : "") + full.slice(start, start + MAX_LINE) + (start + MAX_LINE < full.length ? "…" : "");
+            };
+            let last = -1;
+            for (const [hit] of hits) {
+              const from = Math.max(hit - context, last + 1, 0), to = Math.min(hit + context, lines.length - 1);
+              if (last >= 0 && from > last + 1) out.push("--");
+              for (let i = from; i <= to; i++) {
+                const line = `${ref.suffix}:L${i + 1}${matchAt.has(i) ? ":" : "-"} ${shown(i)}`;
+                size += line.length + 1;
+                if (size > MAX_RESULT_CHARS) { cut = true; break; }
+                out.push(line);
+              }
+              last = Math.max(last, to);
+              if (size > MAX_RESULT_CHARS) break;
+            }
+            if (hits.length && size <= MAX_RESULT_CHARS) out.push("--");
+            if (size > MAX_RESULT_CHARS) break;
+          }
+          const head = total
+            ? `${total} matching line${total === 1 ? "" : "s"} in ${refs.length} reference file${refs.length === 1 ? "" : "s"}` +
+              (cut ? " (more exist; narrow the pattern to see the rest)" : "") + ". Lines marked ':' match, '-' are context."
+            : `No matches in ${refs.length} reference file${refs.length === 1 ? "" : "s"}. Try another word or a broader pattern.`;
+          return {
+            content: [{ type: "text", text: [head, ...out].join("\n") }],
+            // Only counts go to the renderer: the learner must not see the pattern or the matched text.
+            details: { kind: "search", matches: total, files: refs.length },
           };
         },
       },

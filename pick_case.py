@@ -387,8 +387,9 @@ def guideline_reference(gpath: Path, case_path: Path, number: int = 1) -> tuple:
         return (
             f"Reference guideline text: {ref}\n"
             "The top of the file is a contents list giving each section's line number. Read the contents "
-            "first, then read only the sections this case needs (read with offset and limit), and grep this "
-            "file for specific thresholds or drugs as they come up, always giving this file as the path. "
+            "first, then read only the sections this case needs (read with offset and limit). To find a specific "
+            "threshold or drug as it comes up, use the search_case_ref tool with this case file's path; do not use "
+            "grep or find, because the learner sees what those tools search for. "
             "Never read the whole file. '--- Page N ---' markers give the page for citing. If a table or "
             "figure came through garbled, work from the surrounding text; do not use the pdf tool during the case.",
             "text",

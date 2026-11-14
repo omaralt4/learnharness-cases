@@ -2,9 +2,9 @@
   "apiVersion": 1,
   "id": "case-images",
   "name": "Rounds tools",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "minAppVersion": "0.6.1",
-  "description": "Rounds tools for practice sessions: shows case images (ECGs) inline, logs each finished case to case_log.jsonl, and adds a Cases page that runs pick_case.py to make cases, show progress and review, and edit the mix. Runs Python from your cases folder; writes only there and in its own data folder. No model calls.",
+  "description": "Rounds tools for practice sessions: shows case images (ECGs) inline with a full-screen view, searches a case's own reference files without showing the search, logs each finished case to case_log.jsonl, and adds a Cases page that runs pick_case.py to make cases, show progress and review, and edit the mix. Runs Python from your cases folder; writes only there and in its own data folder. No model calls.",
   "main": "main.js",
   "backend": "backend.cjs"
 }

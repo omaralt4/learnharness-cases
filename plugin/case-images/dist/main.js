@@ -2,6 +2,11 @@
 //
 // Draws the image returned by show_case_image. Click the image to switch between
 // fit-to-width and full size (scroll sideways at full size to follow a rhythm strip).
+// The Fullscreen button, or a double-click, opens it on a black full-screen view with
+// wheel zoom, drag to pan and double-click to reset.
+//
+// search_case_ref shows one line, "Searched case reference · N matches", and nothing else:
+// never the pattern or the matched text, which would give the diagnosis away.
 
 const text = (doc, tag, value, style) => {
   const el = doc.createElement(tag);
@@ -10,7 +15,131 @@ const text = (doc, tag, value, style) => {
   return el;
 };
 
+/** Opens the image on a black overlay that fills the viewport (real fullscreen where the
+ * browser allows it). Wheel zooms around the cursor, drag pans, double-click resets, and
+ * Esc or the close button closes. Returns a function that closes it. */
+function openImageViewer(doc, src, alt) {
+  const win = doc.defaultView;
+  const overlay = doc.createElement("div");
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", alt || "Case image, full screen");
+  overlay.tabIndex = -1;
+  overlay.setAttribute("style", "position:fixed;inset:0;z-index:2147483647;background:#000;overflow:hidden;touch-action:none;cursor:grab;outline:none;");
+  const img = doc.createElement("img");
+  img.src = src;
+  img.alt = alt || "Case image";
+  img.draggable = false;
+  img.setAttribute("style", "position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;user-select:none;-webkit-user-drag:none;background:#fff;will-change:transform;");
+  const close = doc.createElement("button");
+  close.type = "button";
+  close.textContent = "Close";
+  close.setAttribute("aria-label", "Close full screen");
+  close.setAttribute("style", "position:absolute;top:12px;right:12px;z-index:1;padding:6px 14px;font:inherit;font-size:13px;color:#fff;background:rgba(40,40,40,0.85);border:1px solid rgba(255,255,255,0.4);border-radius:6px;cursor:pointer;");
+  const hint = doc.createElement("div");
+  hint.textContent = "Scroll to zoom · drag to move · double-click to reset · Esc to close";
+  hint.setAttribute("style", "position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:12px;color:rgba(255,255,255,0.65);pointer-events:none;");
+  overlay.append(img, close, hint);
+
+  let scale = 1, x = 0, y = 0, fitScale = 1, drag = null, open = true, wasFullscreen = false;
+  const apply = () => { img.style.transform = `translate(${x}px, ${y}px) scale(${scale})`; };
+  const fit = () => {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    if (!w || !h) return;
+    const vw = overlay.clientWidth, vh = overlay.clientHeight;
+    fitScale = Math.min(vw / w, vh / h);
+    scale = fitScale;
+    x = (vw - w * scale) / 2;
+    y = (vh - h * scale) / 2;
+    apply();
+  };
+  const onWheel = e => {
+    e.preventDefault();
+    const box = overlay.getBoundingClientRect();
+    const cx = e.clientX - box.left, cy = e.clientY - box.top;
+    const next = Math.min(fitScale * 40, Math.max(fitScale * 0.5, scale * Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0015))));
+    x = cx - (cx - x) * (next / scale);   // keep the point under the cursor where it is
+    y = cy - (cy - y) * (next / scale);
+    scale = next;
+    apply();
+  };
+  const onDown = e => {
+    if (e.button !== 0 || e.target === close) return;
+    drag = { id: e.pointerId, px: e.clientX, py: e.clientY, x, y };
+    try { overlay.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
+    overlay.style.cursor = "grabbing";
+  };
+  const onMove = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    x = drag.x + e.clientX - drag.px;
+    y = drag.y + e.clientY - drag.py;
+    apply();
+  };
+  const onUp = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag = null;
+    overlay.style.cursor = "grab";
+  };
+  const onKey = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); shut(); } };
+  const onFullscreen = () => {
+    if (doc.fullscreenElement === overlay) { wasFullscreen = true; fit(); }
+    else if (wasFullscreen) shut();      // Esc left fullscreen: close the view too
+  };
+  const previousFocus = doc.activeElement;
+
+  function shut() {
+    if (!open) return;
+    open = false;
+    win.removeEventListener("resize", fit);
+    doc.removeEventListener("keydown", onKey, true);
+    doc.removeEventListener("fullscreenchange", onFullscreen);
+    if (doc.fullscreenElement === overlay && doc.exitFullscreen) { try { Promise.resolve(doc.exitFullscreen()).catch(() => {}); } catch { /* already left */ } }
+    overlay.remove();
+    if (previousFocus && typeof previousFocus.focus === "function") { try { previousFocus.focus(); } catch { /* gone */ } }
+  }
+
+  overlay.addEventListener("wheel", onWheel, { passive: false });
+  overlay.addEventListener("pointerdown", onDown);
+  overlay.addEventListener("pointermove", onMove);
+  overlay.addEventListener("pointerup", onUp);
+  overlay.addEventListener("pointercancel", onUp);
+  overlay.addEventListener("dblclick", e => { if (e.target !== close) fit(); });
+  close.addEventListener("click", shut);
+  doc.addEventListener("keydown", onKey, true);
+  doc.addEventListener("fullscreenchange", onFullscreen);
+  win.addEventListener("resize", fit);
+  img.addEventListener("load", fit);
+
+  doc.body.append(overlay);
+  fit();
+  try { overlay.focus(); } catch { /* not focusable */ }
+  // Real fullscreen where the browser allows it; otherwise the fixed overlay already fills the window.
+  if (typeof overlay.requestFullscreen === "function") {
+    try { Promise.resolve(overlay.requestFullscreen()).catch(() => {}); } catch { /* stay as an overlay */ }
+  }
+  return shut;
+}
+
 export function activate(ctx) {
+  // Shows only that a search happened and how many lines matched. The query (tool.input), the
+  // matched text (tool.result) and the error text are never read here, in any state.
+  ctx.registerToolRenderer({
+    toolName: "search_case_ref",
+    mount(container, tool) {
+      const doc = container.ownerDocument;
+      let line = "Searching case reference…";
+      try {
+        if (tool.state === "output-error") line = "Searched case reference · the search failed";
+        else if (tool.state === "output-available") {
+          const n = tool.output && Number.isInteger(tool.output.matches) ? tool.output.matches : null;
+          line = n === null ? "Searched case reference" : `Searched case reference · ${n} match${n === 1 ? "" : "es"}`;
+        }
+      } catch { line = "Searched case reference"; }
+      container.append(text(doc, "p", line, "font-size:12px;opacity:0.7;margin:4px 0;"));
+      return () => container.replaceChildren();
+    },
+  });
+
   ctx.registerToolRenderer({
     toolName: "show_case_image",
     mount(container, tool) {
@@ -38,8 +167,22 @@ export function activate(ctx) {
       img.addEventListener("click", () => { full = !full; fit(); });
       frame.append(img);
 
-      container.append(frame, text(doc, "p", `${out.caption ? out.caption + " · " : ""}click to zoom`, muted));
-      return () => container.replaceChildren();
+      let closeViewer = null;
+      const openViewer = () => { if (closeViewer) closeViewer(); closeViewer = openImageViewer(doc, out.dataUrl, out.caption || "Case image"); };
+      img.addEventListener("dblclick", e => { e.preventDefault(); openViewer(); });
+      const fullscreen = doc.createElement("button");
+      fullscreen.type = "button";
+      fullscreen.textContent = "Fullscreen";
+      fullscreen.setAttribute("aria-label", "Open the image full screen");
+      fullscreen.setAttribute("style", "font:inherit;font-size:12px;padding:2px 10px;border:1px solid var(--border, rgba(127,127,127,0.4));border-radius:6px;background:transparent;color:inherit;cursor:pointer;");
+      fullscreen.addEventListener("click", openViewer);
+      const caption = text(doc, "span", `${out.caption ? out.caption + " · " : ""}click to zoom · double-click for full screen`, "font-size:12px;opacity:0.7;");
+      const bar = doc.createElement("div");
+      bar.setAttribute("style", "display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0;");
+      bar.append(caption, fullscreen);
+
+      container.append(frame, bar);
+      return () => { if (closeViewer) closeViewer(); container.replaceChildren(); };
     },
   });
 
