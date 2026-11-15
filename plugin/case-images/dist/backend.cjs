@@ -312,7 +312,7 @@ const ORDERS = ["unseen_first", "review_first"];
 // Same defaults and labels as pick_case.py.
 const DEFAULT_SCENARIOS = {
   encounters: { ed_first_presentation: 35, ward_called_by_nurse: 15, ward_round_day_2: 15, handover: 10, clinic_follow_up: 15, clinic_new_referral: 10 },
-  extras: { full_history_and_exam: 0.25, exam_sign_deep_dive: 0.3, ethics_or_communication: 0.1, recall_questions: 0.2, exam_style_questions: 0.5, ecg_when_topic_has_one: 0.8, handover_contains_an_error: 0.5 },
+  extras: { full_history_and_exam: 0.25, exam_sign_deep_dive: 0.3, ethics_or_communication: 0.1, recall_questions: 0.2, exam_style_questions: 0.5, ecg_when_topic_has_one: 0.8, handover_contains_an_error: 0.5, atypical_presentation: 0.2 },
   review: { weak_below: 0.7, after_days: 2, order: "unseen_first" },
   tiers: { common: 3, cant_miss: 2, rare: 1 },
   step2_systems: {
@@ -335,6 +335,7 @@ const LABELS = {
   exam_style_questions: "Exam-style questions",
   ecg_when_topic_has_one: "ECG, when the topic has one",
   handover_contains_an_error: "Handover contains a planted error",
+  atypical_presentation: "Atypical presentation (not rolled in complaint mode)",
   common: "Common",
   cant_miss: "Can't miss",
   rare: "Rare",
@@ -549,7 +550,26 @@ function registerCases(ctx) {
     const given = asObject(input);
     const systems = pickSystems(given.systems, true);
     const batch = intBetween(given.batch, 1, 10, 1);
-    return madeCases(await runScript(["common", "--system", systems.join(","), "--batch", String(batch)], 120000 + 60000 * batch));
+    const args = ["common", "--system", systems.join(","), "--batch", String(batch)];
+    if (given.mode === "complaint") {
+      // By presenting complaint. The script checks the name against its own list; here it only
+      // has to be harmless as an argument. No complaint means a random one.
+      args.push("--mode", "complaint");
+      const complaint = typeof given.complaint === "string" ? given.complaint.replace(/[^A-Za-z /]/g, " ").trim().slice(0, 60) : "";
+      if (complaint) args.push(`--complaint=${complaint}`);
+    }
+    return madeCases(await runScript(args, 120000 + 60000 * batch));
+  });
+
+  // The presenting complaints that have a topic in the ticked systems. These come from the topic
+  // lists and a fixed vocabulary, never from cases.
+  ctx.handle("presentations", async input => {
+    const systems = pickSystems(asObject(input).systems, true);
+    const r = await runScript(["presentations", "--system", systems.join(",")], 60000);
+    return {
+      presentations: Array.isArray(r.presentations) ? r.presentations.filter(p => typeof p === "string") : [],
+      untagged: Number.isInteger(r.untagged) ? r.untagged : 0,
+    };
   });
 
   ctx.handle("caseReport", async input => {

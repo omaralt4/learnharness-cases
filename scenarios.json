@@ -1,5 +1,5 @@
 {
-  "_how_to_edit": "Encounter weights are relative: they don't need to add up to 100, a bigger number just means more often. Set one to 0 to switch it off. 'extras' are independent chances from 0 to 1 per case (0.25 = one case in four). Save the file and the next case uses the new values. 'review': a topic whose last case scored below weak_below (0.7 = 70%) comes back once after_days have passed since that case. 'order': \"unseen_first\" works through every unseen topic before reviews; \"review_first\" puts due reviews ahead of unseen topics. 'tiers': a topic may carry a \"tier\" in its topic file; the weight here says how much more often that tier comes up (3 = three times as often as weight 1). A topic with no tier has weight 1. 'step2_systems': used only when you mix several systems. Each case first draws a Step 2 system with these relative weights (the midpoints of the USMLE Step 2 CK content ranges), among the systems your ticked topic lists actually cover, then picks a topic inside it. 'untagged' is the weight shared by topics that have no step2_system.",
+  "_how_to_edit": "Encounter weights are relative: they don't need to add up to 100, a bigger number just means more often. Set one to 0 to switch it off. 'extras' are independent chances from 0 to 1 per case (0.25 = one case in four). 'atypical_presentation' is the chance that a case is built the way the diagnosis gets missed (MI without chest pain, PE as syncope) instead of the typical way; it is not rolled in complaint mode, where each topic's presentations list already covers those routes. Save the file and the next case uses the new values. 'review': a topic whose last case scored below weak_below (0.7 = 70%) comes back once after_days have passed since that case. 'order': \"unseen_first\" works through every unseen topic before reviews; \"review_first\" puts due reviews ahead of unseen topics. 'tiers': a topic may carry a \"tier\" in its topic file; the weight here says how much more often that tier comes up (3 = three times as often as weight 1). A topic with no tier has weight 1. 'step2_systems': used only when you mix several systems. Each case first draws a Step 2 system with these relative weights (the midpoints of the USMLE Step 2 CK content ranges), among the systems your ticked topic lists actually cover, then picks a topic inside it. 'untagged' is the weight shared by topics that have no step2_system.",
   "encounters": {
     "ed_first_presentation": 35,
     "ward_called_by_nurse": 15,
@@ -15,7 +15,8 @@
     "recall_questions": 0.2,
     "exam_style_questions": 0.5,
     "ecg_when_topic_has_one": 0.8,
-    "handover_contains_an_error": 0.5
+    "handover_contains_an_error": 0.5,
+    "atypical_presentation": 0.2
   },
   "review": {
     "weak_below": 0.7,

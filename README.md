@@ -11,7 +11,7 @@ Nothing here shows a case's topic, diagnosis or guideline before you finish it. 
 After installing the plugin (see Setup), open **Cases** from the sidebar in LearnHarness.
 
 - **Systems**: tick one or several. Every file in `topics/` gets a checkbox. Several systems pool their topics, and the case never says which system it came from. With several ticked, cases are spread across the USMLE Step 2 systems (see Mixed practice).
-- **New case**: makes a case and copies the opening message. Start a Practice session and paste.
+- **New case**: makes a case and copies the opening message. Start a Practice session and paste. **Pick by** chooses how: by system (the default), or by presenting complaint. For a complaint, start typing and pick one from the list (only complaints that have topics in the ticked systems are offered), or press **Random complaint**. You aren't told the topic or its system.
 - **Case report**: the same, from a real open-access case report. Optional complaint, journal, and emergency department only.
 - **Progress**: coverage, encounter mix, Step 2 system mix, problems in the topic lists, and missing or unconverted guideline files. Per-system counts and topic names stay hidden unless you tick the switch, because they can give away a case you haven't run. For the same reason the Step 2 mix counts finished cases only until you tick it.
 - **Review**: weakest topics and weak spots from finished cases.
@@ -90,6 +90,9 @@ After making a case, start a Practice session and paste the opening message.
 python pick_case.py -h
 python pick_case.py common --system cardio
 python pick_case.py common --system cardio,gi,pulm     several systems, topics pooled
+python pick_case.py common --system all --mode complaint                          a random presenting complaint
+python pick_case.py common --system all --mode complaint --complaint "chest pain"
+python pick_case.py presentations --system cardio,em   the complaints that have topics
 python pick_case.py status                             all systems; add --system to narrow
 python pick_case.py review --system cardio
 ```
@@ -118,6 +121,7 @@ An older `progress.json` is converted on first use, and the original is kept nex
 | `references` | Several references instead of, or as well as, the pair above: a list of `{"file", "name", "region"}`. `file` is a PDF or a chapter file from `chapters.txt`. Add `"folder": "cardio"` when the file lives in `guidelines/cardio/` instead of this system's own folder. |
 | `region` (in a reference) | `"UK"` or another non-US region tells the agent to use that reference for presentation and approach, grade management against US practice, and name the differences at the end. |
 | `complaint` | The presenting complaint the case opens with. |
+| `presentations` | The ways the topic can present, for complaint mode, including its classic atypical routes. Only these names: chest pain, dyspnea, palpitations, syncope/collapse, hypotension/shock, abdominal pain, GI bleeding, vomiting/diarrhea, headache, altered mental status, seizure, focal weakness, dizziness, fever, back pain, limb pain/swelling, joint pain, rash/skin, red eye/visual loss, sore throat/ENT, vaginal bleeding/pelvic pain, scrotal pain, urinary symptoms, overdose/poisoning, trauma, unwell child, behavioural disturbance. A shared topic should list the same ones in every file. |
 | `tier` | `common`, `cant_miss` or `rare`. Weights are in `scenarios.json` (3, 2, 1); no tier means weight 1. |
 | `step2_system` | The USMLE Step 2 system the topic belongs to, for mixed practice. A topic file can set a default at its top level. The names are the keys of `step2_systems` in `scenarios.json`. |
 | `canonical` | A shared name for the same diagnosis listed in two files under different names. `status` warns about those. |
@@ -152,6 +156,10 @@ An older `progress.json` is converted on first use, and the original is kept nex
 Ties are random.
 
 **Mixed practice.** With several systems ticked, each case first draws a Step 2 system using the weights in `scenarios.json` (the midpoints of the USMLE Step 2 CK content ranges), only among the systems your ticked topic lists cover. The topic is then chosen inside that system by the rules above. Topics with no `step2_system` share an "untagged" group. With one system ticked there is no draw.
+
+**Complaint mode.** Each case starts from a presenting complaint: the one you chose, or a random one drawn evenly among the complaints that have topics in the ticked systems. The topic is then chosen among those that can present that way, by the rules above. Step 2 system weights aren't used. The case opens with the complaint only, and at the end the agent asks you for the look-alikes and what told them apart.
+
+**Atypical presentations.** Outside complaint mode, one case in five (`atypical_presentation` in the Mix tab) is built the way the diagnosis gets missed, such as an MI without chest pain, and the agent says at the end why it was atypical and which clue should have caught it.
 
 ## Sources and license
 

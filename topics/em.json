@@ -23,6 +23,7 @@
    "topic": "Anaphylaxis",
    "tier": "cant_miss",
    "complaint": "rash and difficulty breathing",
+   "presentations": ["rash/skin", "dyspnea", "hypotension/shock", "syncope/collapse"],
    "step2_system": "blood_immune",
    "references": [
     {
@@ -44,6 +45,7 @@
    "topic": "Sepsis and septic shock",
    "tier": "common",
    "complaint": "fever and hypotension",
+   "presentations": ["fever", "hypotension/shock", "altered mental status"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -70,6 +72,7 @@
    "topic": "Acute severe asthma",
    "tier": "common",
    "complaint": "wheeze and shortness of breath",
+   "presentations": ["dyspnea"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -86,6 +89,7 @@
    "topic": "COPD exacerbation",
    "tier": "common",
    "complaint": "worsening breathlessness",
+   "presentations": ["dyspnea", "altered mental status"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -102,6 +106,7 @@
    "topic": "Community-acquired pneumonia",
    "tier": "common",
    "complaint": "cough and fever",
+   "presentations": ["fever", "dyspnea", "chest pain", "altered mental status"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -123,6 +128,7 @@
    "topic": "Spontaneous pneumothorax",
    "tier": "cant_miss",
    "complaint": "sudden pleuritic chest pain",
+   "presentations": ["chest pain", "dyspnea"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -139,6 +145,7 @@
    "topic": "Pulmonary embolism",
    "tier": "cant_miss",
    "complaint": "pleuritic chest pain and breathlessness",
+   "presentations": ["chest pain", "dyspnea", "syncope/collapse", "limb pain/swelling", "hypotension/shock"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -160,6 +167,7 @@
    "topic": "Upper GI bleed",
    "tier": "common",
    "complaint": "vomiting blood or melaena",
+   "presentations": ["GI bleeding", "syncope/collapse", "hypotension/shock"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -176,6 +184,7 @@
    "topic": "Lower GI bleed",
    "tier": "common",
    "complaint": "rectal bleeding",
+   "presentations": ["GI bleeding"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -192,6 +201,7 @@
    "topic": "Diabetic ketoacidosis",
    "tier": "common",
    "complaint": "vomiting, abdominal pain, polyuria",
+   "presentations": ["vomiting/diarrhea", "abdominal pain", "altered mental status", "dyspnea", "urinary symptoms"],
    "step2_system": "endocrine",
    "references": [
     {
@@ -213,6 +223,7 @@
    "topic": "Hyperosmolar hyperglycaemic state",
    "tier": "cant_miss",
    "complaint": "confusion in an older diabetic",
+   "presentations": ["altered mental status", "focal weakness", "seizure"],
    "step2_system": "endocrine",
    "references": [
     {
@@ -234,6 +245,7 @@
    "topic": "Hypoglycaemia",
    "tier": "common",
    "complaint": "found confused or unresponsive",
+   "presentations": ["altered mental status", "seizure", "focal weakness", "behavioural disturbance", "syncope/collapse"],
    "step2_system": "endocrine",
    "references": [
     {
@@ -250,6 +262,7 @@
    "topic": "Adrenal crisis",
    "tier": "rare",
    "complaint": "hypotension and vomiting",
+   "presentations": ["hypotension/shock", "vomiting/diarrhea", "abdominal pain", "altered mental status"],
    "step2_system": "endocrine",
    "references": [
     {
@@ -266,6 +279,7 @@
    "topic": "Thyroid storm / myxoedema coma",
    "tier": "rare",
    "complaint": "agitation and fever, or hypothermia and drowsiness",
+   "presentations": ["fever", "altered mental status", "palpitations", "behavioural disturbance"],
    "step2_system": "endocrine",
    "references": [
     {
@@ -282,6 +296,7 @@
    "topic": "Hyperkalaemia",
    "tier": "cant_miss",
    "complaint": "weakness, abnormal bloods",
+   "presentations": ["palpitations", "syncope/collapse"],
    "step2_system": "renal_reproductive",
    "references": [
     {
@@ -298,6 +313,7 @@
    "topic": "Hyponatraemia",
    "tier": "common",
    "complaint": "confusion or seizure",
+   "presentations": ["altered mental status", "seizure", "headache", "vomiting/diarrhea"],
    "step2_system": "renal_reproductive",
    "references": [
     {
@@ -314,6 +330,7 @@
    "topic": "Acute kidney injury",
    "tier": "common",
    "complaint": "reduced urine output, abnormal bloods",
+   "presentations": ["urinary symptoms", "altered mental status"],
    "step2_system": "renal_reproductive",
    "references": [
     {
@@ -330,6 +347,7 @@
    "topic": "Subarachnoid haemorrhage",
    "tier": "cant_miss",
    "complaint": "sudden severe headache",
+   "presentations": ["headache", "syncope/collapse", "altered mental status", "seizure"],
    "step2_system": "nervous",
    "references": [
     {
@@ -351,6 +369,7 @@
    "topic": "Headache (migraine and benign causes)",
    "tier": "common",
    "complaint": "headache",
+   "presentations": ["headache"],
    "step2_system": "nervous",
    "references": [
     {
@@ -367,6 +386,7 @@
    "topic": "Acute ischaemic stroke / TIA",
    "tier": "cant_miss",
    "complaint": "sudden weakness or speech disturbance",
+   "presentations": ["focal weakness", "dizziness", "altered mental status", "red eye/visual loss"],
    "step2_system": "nervous",
    "references": [
     {
@@ -388,6 +408,7 @@
    "topic": "First seizure / status epilepticus",
    "tier": "common",
    "complaint": "fit",
+   "presentations": ["seizure", "altered mental status"],
    "step2_system": "nervous",
    "references": [
     {
@@ -404,6 +425,7 @@
    "topic": "Bacterial meningitis / encephalitis",
    "tier": "cant_miss",
    "complaint": "fever, headache, neck stiffness",
+   "presentations": ["fever", "headache", "altered mental status", "seizure", "rash/skin"],
    "step2_system": "nervous",
    "references": [
     {
@@ -425,6 +447,7 @@
    "topic": "Acute confusion in an older adult",
    "tier": "common",
    "complaint": "confusion",
+   "presentations": ["altered mental status", "behavioural disturbance"],
    "step2_system": "nervous",
    "references": [
     {
@@ -441,6 +464,7 @@
    "topic": "Acute vertigo (peripheral vs central)",
    "tier": "common",
    "complaint": "dizziness",
+   "presentations": ["dizziness"],
    "step2_system": "nervous",
    "references": [
     {
@@ -462,6 +486,7 @@
    "topic": "Acute flaccid weakness (Guillain-Barré)",
    "tier": "rare",
    "complaint": "ascending weakness",
+   "presentations": ["focal weakness", "back pain"],
    "step2_system": "nervous",
    "references": [
     {
@@ -478,6 +503,7 @@
    "topic": "Cauda equina / cord compression",
    "tier": "cant_miss",
    "complaint": "back pain with leg weakness or retention",
+   "presentations": ["back pain", "urinary symptoms", "focal weakness"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -499,6 +525,7 @@
    "topic": "Back pain with red flags",
    "tier": "common",
    "complaint": "back pain",
+   "presentations": ["back pain"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -515,6 +542,7 @@
    "topic": "Paracetamol (acetaminophen) overdose",
    "tier": "common",
    "complaint": "took tablets",
+   "presentations": ["overdose/poisoning", "vomiting/diarrhea", "abdominal pain"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -536,6 +564,7 @@
    "topic": "Salicylate overdose",
    "tier": "cant_miss",
    "complaint": "tinnitus, vomiting, fast breathing",
+   "presentations": ["overdose/poisoning", "vomiting/diarrhea", "dyspnea", "altered mental status"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -552,6 +581,7 @@
    "topic": "Tricyclic antidepressant overdose",
    "tier": "cant_miss",
    "complaint": "drowsy after overdose",
+   "presentations": ["overdose/poisoning", "altered mental status", "seizure", "palpitations"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -568,6 +598,7 @@
    "topic": "Opioid toxicity",
    "tier": "common",
    "complaint": "found unresponsive",
+   "presentations": ["overdose/poisoning", "altered mental status"],
    "step2_system": "behavioral",
    "references": [
     {
@@ -584,6 +615,7 @@
    "topic": "Alcohol withdrawal",
    "tier": "common",
    "complaint": "tremor and agitation",
+   "presentations": ["seizure", "altered mental status", "behavioural disturbance"],
    "step2_system": "behavioral",
    "references": [
     {
@@ -605,6 +637,7 @@
    "topic": "Toxic alcohol ingestion",
    "tier": "rare",
    "complaint": "drunk with a high anion gap",
+   "presentations": ["overdose/poisoning", "altered mental status", "red eye/visual loss", "vomiting/diarrhea"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -621,6 +654,7 @@
    "topic": "Carbon monoxide poisoning",
    "tier": "cant_miss",
    "complaint": "headache in several household members",
+   "presentations": ["headache", "overdose/poisoning", "altered mental status", "dizziness", "syncope/collapse"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -642,6 +676,7 @@
    "topic": "Beta-blocker / calcium-channel blocker overdose",
    "tier": "rare",
    "complaint": "bradycardia and hypotension after overdose",
+   "presentations": ["overdose/poisoning", "hypotension/shock", "syncope/collapse"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -658,6 +693,7 @@
    "topic": "Serotonin syndrome / NMS / sympathomimetic toxicity",
    "tier": "rare",
    "complaint": "agitation, fever, rigidity",
+   "presentations": ["fever", "altered mental status", "behavioural disturbance", "overdose/poisoning"],
    "step2_system": "behavioral",
    "references": [
     {
@@ -674,6 +710,7 @@
    "topic": "Cellulitis vs necrotising fasciitis",
    "tier": "common",
    "complaint": "red painful limb",
+   "presentations": ["limb pain/swelling", "rash/skin", "fever"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -695,6 +732,7 @@
    "topic": "Pyelonephritis / urosepsis",
    "tier": "common",
    "complaint": "fever and flank pain",
+   "presentations": ["fever", "urinary symptoms", "back pain", "abdominal pain", "altered mental status"],
    "step2_system": "renal_reproductive",
    "references": [
     {
@@ -711,6 +749,7 @@
    "topic": "Fever in the returning traveller",
    "tier": "rare",
    "complaint": "fever after travel",
+   "presentations": ["fever"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -727,6 +766,7 @@
    "topic": "Heat stroke",
    "tier": "cant_miss",
    "complaint": "collapse in the heat",
+   "presentations": ["syncope/collapse", "altered mental status", "fever"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -743,6 +783,7 @@
    "topic": "Hypothermia",
    "tier": "rare",
    "complaint": "found cold",
+   "presentations": ["altered mental status", "syncope/collapse"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -759,6 +800,7 @@
    "topic": "Polytrauma: primary survey",
    "tier": "common",
    "complaint": "high-speed RTC",
+   "presentations": ["trauma", "hypotension/shock"],
    "step2_system": "multisystem",
    "references": [
     {
@@ -775,6 +817,7 @@
    "topic": "Head injury",
    "tier": "common",
    "complaint": "fall with head strike",
+   "presentations": ["trauma", "headache", "altered mental status"],
    "step2_system": "nervous",
    "references": [
     {
@@ -796,6 +839,7 @@
    "topic": "Cervical spine injury",
    "tier": "cant_miss",
    "complaint": "neck pain after trauma",
+   "presentations": ["trauma", "focal weakness"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -812,6 +856,7 @@
    "topic": "Chest trauma (tension pneumothorax, haemothorax)",
    "tier": "cant_miss",
    "complaint": "breathless after trauma",
+   "presentations": ["trauma", "dyspnea", "chest pain", "hypotension/shock"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -828,6 +873,7 @@
    "topic": "Blunt abdominal trauma",
    "tier": "cant_miss",
    "complaint": "abdominal pain after trauma",
+   "presentations": ["trauma", "abdominal pain", "hypotension/shock"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -844,6 +890,7 @@
    "topic": "Pelvic fracture with haemorrhage",
    "tier": "cant_miss",
    "complaint": "hypotension after a fall",
+   "presentations": ["trauma", "hypotension/shock"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -860,6 +907,7 @@
    "topic": "Burns",
    "tier": "cant_miss",
    "complaint": "burn injury",
+   "presentations": ["trauma"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -881,6 +929,7 @@
    "topic": "Hip fracture in an older adult",
    "tier": "common",
    "complaint": "fall, cannot weight-bear",
+   "presentations": ["trauma", "limb pain/swelling"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -897,6 +946,7 @@
    "topic": "Wrist injury (distal radius, scaphoid)",
    "tier": "common",
    "complaint": "fall on outstretched hand",
+   "presentations": ["trauma", "limb pain/swelling"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -913,6 +963,7 @@
    "topic": "Ankle injury",
    "tier": "common",
    "complaint": "twisted ankle",
+   "presentations": ["trauma", "limb pain/swelling"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -929,6 +980,7 @@
    "topic": "Shoulder dislocation",
    "tier": "common",
    "complaint": "shoulder pain after fall",
+   "presentations": ["trauma", "limb pain/swelling", "joint pain"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -945,6 +997,7 @@
    "topic": "Hot swollen joint",
    "tier": "cant_miss",
    "complaint": "painful swollen knee",
+   "presentations": ["joint pain", "fever"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -961,6 +1014,7 @@
    "topic": "Compartment syndrome",
    "tier": "cant_miss",
    "complaint": "severe leg pain after fracture",
+   "presentations": ["limb pain/swelling", "trauma"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -977,6 +1031,7 @@
    "topic": "Lacerations, bites and tetanus",
    "tier": "common",
    "complaint": "cut or bite",
+   "presentations": ["trauma"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -993,6 +1048,7 @@
    "topic": "Appendicitis",
    "tier": "common",
    "complaint": "right lower abdominal pain",
+   "presentations": ["abdominal pain", "vomiting/diarrhea", "fever"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -1009,6 +1065,7 @@
    "topic": "Bowel obstruction",
    "tier": "common",
    "complaint": "vomiting and distension",
+   "presentations": ["abdominal pain", "vomiting/diarrhea"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -1025,6 +1082,7 @@
    "topic": "Biliary colic / cholecystitis / cholangitis",
    "tier": "common",
    "complaint": "right upper quadrant pain",
+   "presentations": ["abdominal pain", "fever", "vomiting/diarrhea"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -1041,6 +1099,7 @@
    "topic": "Acute pancreatitis",
    "tier": "common",
    "complaint": "epigastric pain radiating to back",
+   "presentations": ["abdominal pain", "vomiting/diarrhea", "back pain"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -1057,6 +1116,7 @@
    "topic": "Mesenteric ischaemia",
    "tier": "rare",
    "complaint": "pain out of proportion to exam",
+   "presentations": ["abdominal pain", "GI bleeding", "vomiting/diarrhea"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -1073,6 +1133,7 @@
    "topic": "Perforated viscus",
    "tier": "cant_miss",
    "complaint": "sudden severe abdominal pain",
+   "presentations": ["abdominal pain", "hypotension/shock"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -1089,6 +1150,7 @@
    "topic": "Renal colic",
    "tier": "common",
    "complaint": "loin to groin pain",
+   "presentations": ["abdominal pain", "back pain", "urinary symptoms"],
    "step2_system": "renal_reproductive",
    "references": [
     {
@@ -1105,6 +1167,7 @@
    "topic": "Testicular torsion",
    "tier": "cant_miss",
    "complaint": "acute scrotal pain",
+   "presentations": ["scrotal pain", "abdominal pain"],
    "step2_system": "renal_reproductive",
    "references": [
     {
@@ -1126,6 +1189,7 @@
    "topic": "Acute urinary retention",
    "tier": "common",
    "complaint": "cannot pass urine",
+   "presentations": ["urinary symptoms", "abdominal pain"],
    "step2_system": "renal_reproductive",
    "references": [
     {
@@ -1142,6 +1206,7 @@
    "topic": "Painful red eye (acute angle-closure, iritis, keratitis)",
    "tier": "cant_miss",
    "complaint": "painful red eye",
+   "presentations": ["red eye/visual loss", "headache", "vomiting/diarrhea"],
    "step2_system": "nervous",
    "references": [
     {
@@ -1158,6 +1223,7 @@
    "topic": "Sudden painless visual loss",
    "tier": "rare",
    "complaint": "sudden loss of vision",
+   "presentations": ["red eye/visual loss"],
    "step2_system": "nervous",
    "references": [
     {
@@ -1174,6 +1240,7 @@
    "topic": "Chemical eye injury",
    "tier": "cant_miss",
    "complaint": "chemical splash to eye",
+   "presentations": ["red eye/visual loss"],
    "step2_system": "nervous",
    "references": [
     {
@@ -1190,6 +1257,7 @@
    "topic": "Epistaxis",
    "tier": "common",
    "complaint": "nosebleed",
+   "presentations": ["sore throat/ENT"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -1206,6 +1274,7 @@
    "topic": "Sore throat (quinsy, epiglottitis)",
    "tier": "common",
    "complaint": "sore throat, cannot swallow",
+   "presentations": ["sore throat/ENT", "fever"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -1222,6 +1291,7 @@
    "topic": "Ectopic pregnancy",
    "tier": "cant_miss",
    "complaint": "lower abdominal pain, missed period",
+   "presentations": ["vaginal bleeding/pelvic pain", "abdominal pain", "syncope/collapse", "hypotension/shock"],
    "step2_system": "pregnancy",
    "references": [
     {
@@ -1238,6 +1308,7 @@
    "topic": "Bleeding in early pregnancy",
    "tier": "common",
    "complaint": "vaginal bleeding in pregnancy",
+   "presentations": ["vaginal bleeding/pelvic pain"],
    "step2_system": "pregnancy",
    "references": [
     {
@@ -1254,6 +1325,7 @@
    "topic": "Pre-eclampsia / eclampsia",
    "tier": "cant_miss",
    "complaint": "headache in late pregnancy",
+   "presentations": ["headache", "seizure", "abdominal pain", "red eye/visual loss"],
    "step2_system": "pregnancy",
    "references": [
     {
@@ -1270,6 +1342,7 @@
    "topic": "Pelvic inflammatory disease",
    "tier": "common",
    "complaint": "lower abdominal pain and discharge",
+   "presentations": ["vaginal bleeding/pelvic pain", "abdominal pain", "fever"],
    "step2_system": "renal_reproductive",
    "references": [
     {
@@ -1286,6 +1359,7 @@
    "topic": "Ovarian torsion",
    "tier": "cant_miss",
    "complaint": "sudden unilateral pelvic pain",
+   "presentations": ["vaginal bleeding/pelvic pain", "abdominal pain", "vomiting/diarrhea"],
    "step2_system": "renal_reproductive",
    "references": [
     {
@@ -1302,6 +1376,7 @@
    "topic": "Self-harm and suicide risk assessment",
    "tier": "common",
    "complaint": "took an overdose / self-harm",
+   "presentations": ["overdose/poisoning", "behavioural disturbance"],
    "step2_system": "behavioral",
    "references": [
     {
@@ -1318,6 +1393,7 @@
    "topic": "Acute behavioural disturbance",
    "tier": "common",
    "complaint": "agitated and aggressive",
+   "presentations": ["behavioural disturbance", "altered mental status"],
    "step2_system": "behavioral",
    "references": [
     {
@@ -1334,6 +1410,7 @@
    "topic": "Capacity and refusal of treatment",
    "tier": "common",
    "complaint": "wants to leave against advice",
+   "presentations": ["behavioural disturbance"],
    "step2_system": "behavioral",
    "references": [
     {
@@ -1350,6 +1427,7 @@
    "topic": "Febrile infant / serious bacterial infection",
    "tier": "cant_miss",
    "complaint": "fever in a young baby",
+   "presentations": ["unwell child", "fever"],
    "step2_system": "human_development",
    "references": [
     {
@@ -1366,6 +1444,7 @@
    "topic": "Paediatric sepsis",
    "tier": "cant_miss",
    "complaint": "unwell child with fever",
+   "presentations": ["unwell child", "fever", "hypotension/shock"],
    "step2_system": "human_development",
    "references": [
     {
@@ -1387,6 +1466,7 @@
    "topic": "Bronchiolitis",
    "tier": "common",
    "complaint": "infant with cough and poor feeding",
+   "presentations": ["unwell child", "dyspnea"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -1403,6 +1483,7 @@
    "topic": "Croup",
    "tier": "common",
    "complaint": "barking cough and stridor",
+   "presentations": ["unwell child", "dyspnea", "sore throat/ENT"],
    "step2_system": "respiratory",
    "references": [
     {
@@ -1419,6 +1500,7 @@
    "topic": "Gastroenteritis and dehydration in children",
    "tier": "common",
    "complaint": "child with vomiting and diarrhoea",
+   "presentations": ["unwell child", "vomiting/diarrhea"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -1435,6 +1517,7 @@
    "topic": "Febrile seizure",
    "tier": "common",
    "complaint": "child had a fit with fever",
+   "presentations": ["unwell child", "seizure", "fever"],
    "step2_system": "nervous",
    "references": [
     {
@@ -1451,6 +1534,7 @@
    "topic": "Intussusception",
    "tier": "cant_miss",
    "complaint": "infant with intermittent screaming",
+   "presentations": ["unwell child", "abdominal pain", "vomiting/diarrhea", "GI bleeding"],
    "step2_system": "gastrointestinal",
    "references": [
     {
@@ -1467,6 +1551,7 @@
    "topic": "Limping child (septic hip, SCFE, transient synovitis)",
    "tier": "common",
    "complaint": "child won't walk",
+   "presentations": ["unwell child", "limb pain/swelling", "joint pain"],
    "step2_system": "musculoskeletal_skin",
    "references": [
     {
@@ -1483,6 +1568,7 @@
    "topic": "Non-accidental injury",
    "tier": "cant_miss",
    "complaint": "injury that doesn't fit the story",
+   "presentations": ["unwell child", "trauma"],
    "step2_system": "behavioral",
    "references": [
     {
@@ -1499,6 +1585,7 @@
    "topic": "STEMI",
    "tier": "common",
    "complaint": "chest pain",
+   "presentations": ["chest pain", "dyspnea", "syncope/collapse", "altered mental status"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1527,6 +1614,7 @@
    "topic": "NSTE-ACS (NSTEMI or unstable angina)",
    "tier": "common",
    "complaint": "chest pain",
+   "presentations": ["chest pain", "dyspnea"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1556,6 +1644,7 @@
    "topic": "Cardiogenic shock complicating acute MI",
    "tier": "cant_miss",
    "complaint": "chest pain and hypotension",
+   "presentations": ["hypotension/shock", "chest pain", "dyspnea", "altered mental status"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1582,6 +1671,7 @@
    "topic": "Acute decompensated heart failure with reduced EF",
    "tier": "common",
    "complaint": "breathless, swollen legs",
+   "presentations": ["dyspnea", "limb pain/swelling"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1609,6 +1699,7 @@
    "topic": "Atrial fibrillation with rapid ventricular response",
    "tier": "common",
    "complaint": "palpitations",
+   "presentations": ["palpitations", "dyspnea", "chest pain", "dizziness"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1637,6 +1728,7 @@
    "topic": "Paroxysmal supraventricular tachycardia",
    "tier": "common",
    "complaint": "palpitations",
+   "presentations": ["palpitations", "chest pain", "dizziness", "syncope/collapse"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1666,6 +1758,7 @@
    "topic": "Symptomatic bradycardia or high-grade AV block",
    "tier": "cant_miss",
    "complaint": "dizzy with a slow pulse",
+   "presentations": ["dizziness", "syncope/collapse"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1696,6 +1789,7 @@
    "topic": "Syncope",
    "tier": "common",
    "complaint": "collapse",
+   "presentations": ["syncope/collapse"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1724,6 +1818,7 @@
    "topic": "Cardiac arrest or unstable ventricular tachycardia",
    "tier": "cant_miss",
    "complaint": "collapse, no pulse",
+   "presentations": ["syncope/collapse", "palpitations", "chest pain"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1746,6 +1841,7 @@
    "topic": "Acute pericarditis",
    "tier": "common",
    "complaint": "pleuritic chest pain",
+   "presentations": ["chest pain", "fever"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1768,6 +1864,7 @@
    "topic": "Cardiac tamponade",
    "tier": "cant_miss",
    "complaint": "breathless and hypotensive",
+   "presentations": ["dyspnea", "hypotension/shock", "chest pain"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1792,6 +1889,7 @@
    "topic": "Acute aortic dissection",
    "tier": "cant_miss",
    "complaint": "tearing chest pain",
+   "presentations": ["chest pain", "back pain", "syncope/collapse", "focal weakness", "abdominal pain"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1817,6 +1915,7 @@
    "topic": "Hypertensive emergency",
    "tier": "cant_miss",
    "complaint": "very high blood pressure with symptoms",
+   "presentations": ["headache", "altered mental status", "chest pain", "dyspnea", "red eye/visual loss"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1841,6 +1940,7 @@
    "topic": "Ruptured / symptomatic abdominal aortic aneurysm",
    "tier": "cant_miss",
    "complaint": "sudden back or abdominal pain with collapse",
+   "presentations": ["abdominal pain", "back pain", "syncope/collapse", "hypotension/shock"],
    "step2_system": "cardiovascular",
    "references": [
     {
@@ -1863,6 +1963,7 @@
    "topic": "Acute limb ischemia",
    "tier": "cant_miss",
    "complaint": "sudden cold painful leg",
+   "presentations": ["limb pain/swelling"],
    "step2_system": "cardiovascular",
    "references": [
     {

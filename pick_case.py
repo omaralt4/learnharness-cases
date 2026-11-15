@@ -34,6 +34,14 @@ Their topics are pooled, and the case file never names the system. The same id
 in two topic lists is one shared topic with one history.
              python pick_case.py common --system cardio,gi,pulm
 
+Complaint mode: --mode complaint picks by presenting complaint instead of by
+system. Topics carry a "presentations" list; a presentation is drawn (or given
+with --complaint), then a topic that can present that way. The learner is told
+neither the topic nor the system.
+             python pick_case.py common --system all --mode complaint
+             python pick_case.py common --system all --mode complaint --complaint "chest pain"
+             python pick_case.py presentations --system cardio,em
+
 Every command also takes --json, which prints one JSON object instead of text.
 The Cases page of the Rounds tools plugin in LearnHarness uses it.
 
@@ -96,7 +104,8 @@ DEFAULT_SCENARIOS = {
     "encounters": {"ed_first_presentation": 35, "ward_called_by_nurse": 15, "ward_round_day_2": 15,
                    "handover": 10, "clinic_follow_up": 15, "clinic_new_referral": 10},
     "extras": {"full_history_and_exam": 0.25, "exam_sign_deep_dive": 0.30, "ethics_or_communication": 0.10,
-               "recall_questions": 0.20, "exam_style_questions": 0.50, "ecg_when_topic_has_one": 0.80, "handover_contains_an_error": 0.50},
+               "recall_questions": 0.20, "exam_style_questions": 0.50, "ecg_when_topic_has_one": 0.80, "handover_contains_an_error": 0.50,
+               "atypical_presentation": 0.20},
     "review": {"weak_below": 0.7, "after_days": 2, "order": "unseen_first"},
     # Relative weight of a topic's optional "tier". A topic with no tier has weight 1.
     "tiers": {"common": 3, "cant_miss": 2, "rare": 1},
@@ -116,6 +125,29 @@ STEP2_LABELS = {
     "untagged": "Untagged",
 }
 UNTAGGED = "untagged"
+
+# The only values a topic's "presentations" list may hold. Complaint mode picks among these.
+PRESENTATIONS = [
+    "chest pain", "dyspnea", "palpitations", "syncope/collapse", "hypotension/shock", "abdominal pain",
+    "GI bleeding", "vomiting/diarrhea", "headache", "altered mental status", "seizure", "focal weakness",
+    "dizziness", "fever", "back pain", "limb pain/swelling", "joint pain", "rash/skin", "red eye/visual loss",
+    "sore throat/ENT", "vaginal bleeding/pelvic pain", "scrotal pain", "urinary symptoms", "overdose/poisoning",
+    "trauma", "unwell child", "behavioural disturbance",
+]
+PRESENTATION_NAME = {p.lower(): p for p in PRESENTATIONS}
+
+# Instructions that go into a seed, not into 10-doctrine.md (which only says to follow them).
+ATYPICAL_TEXT = (
+    "Atypical presentation. Present the diagnosis the way it gets missed in real life and on exams. For example, "
+    "MI in an elderly diabetic or a woman with dyspnoea or fatigue and no chest pain, PE as syncope, appendicitis "
+    "in pregnancy, meningitis in an older adult as confusion. It must still be a recognised, guideline-documented "
+    "presentation, not a contrivance. At conclusion, name why it was atypical and the clue that should have caught it."
+)
+COMPLAINT_TEXT = (
+    "Complaint mode. The learner doesn't know the system. Open with the presenting complaint only. The differential "
+    "is the teaching point. At conclusion, ask the learner for the 2\u20133 look-alikes for this complaint and the "
+    "finding that separated them, then grade it."
+)
 
 
 # ---------- shared ----------
@@ -220,6 +252,7 @@ def merge_topics(entries: list, tiers: dict) -> dict:
     merged["_refs"] = refs
     merged["_legacy"] = False
     merged["ecg_codes"] = list(dict.fromkeys(c for e in entries for c in e.get("ecg_codes") or []))
+    merged["presentations"] = [p for e in entries for p in (e.get("presentations") or [])]  # every file's, once
     tiered = [e for e in entries if e["_chosen"] and isinstance(e.get("tier"), str)]
     merged.pop("tier", None)
     if tiered:
@@ -1009,6 +1042,72 @@ def pick_mixed(topics: list, built: dict, n: int, rng: random.Random, hist: dict
     return chosen
 
 
+def presentations_of(topic: dict) -> list:
+    """The topic's presentations that are in the vocabulary, spelled as the vocabulary spells them."""
+    listed = topic.get("presentations")
+    names = [PRESENTATION_NAME.get(str(p).strip().lower()) for p in (listed if isinstance(listed, list) else [])]
+    return list(dict.fromkeys(n for n in names if n))
+
+
+def available_presentations(topics: list) -> list:
+    """Presentations that at least one of these topics has, in vocabulary order."""
+    have = {p for t in topics for p in presentations_of(t)}
+    return [p for p in PRESENTATIONS if p in have]
+
+
+def match_presentation(text: str, topics: list) -> str:
+    """--complaint as typed -> a vocabulary name that has a topic in the pool, or a plain error."""
+    typed = " ".join(str(text).lower().split())
+    name = PRESENTATION_NAME.get(typed)
+    if not name:
+        close = [p for p in PRESENTATIONS if typed and typed in p.lower()]
+        if len(close) != 1:
+            sys.exit(f"'{text}' is not a presentation. Use one of: {', '.join(PRESENTATIONS)}.")
+        name = close[0]
+    have = available_presentations(topics)
+    if name not in have:
+        sys.exit(f"No topic in the chosen systems is tagged '{name}'. "
+                 + (f"These have topics: {', '.join(have)}." if have else "None of their topics has a presentations list."))
+    return name
+
+
+def pick_by_complaint(topics: list, built: dict, n: int, rng: random.Random, hist: dict, review: dict, tiers: dict,
+                      wanted: str = None) -> list:
+    """Complaint mode: each case takes a presentation (the one asked for, else one drawn evenly
+    among those that still have a topic in the pool), then picks a topic that can present that
+    way with the usual rules (pick_topics). Step 2 system weights play no part.
+    Returns (topic, presentation) pairs."""
+    left, chosen = topics[:], []
+    for _ in range(n):
+        groups = {}
+        for t in left:
+            for p in presentations_of(t):
+                groups.setdefault(p, []).append(t)
+        names = [p for p in PRESENTATIONS if p in groups and wanted in (None, p)]
+        if not names:
+            break
+        name = wanted or rng.choice(names)
+        topic = pick_topics(groups[name], built, 1, rng, hist, review, tiers)[0]
+        chosen.append((topic, name))
+        left.remove(topic)
+    return chosen
+
+
+def cmd_presentations(args, rng):
+    """The presentations complaint mode can use with these systems. Names come from the topic
+    lists and the fixed vocabulary only, never from cases."""
+    topics = load_pool(args.systems, load_scenarios()["tiers"])
+    names = available_presentations(topics)
+    untagged = sum(1 for t in topics if not presentations_of(t))
+    print("Presentations with at least one topic:" if names else "No topic here has a presentations list.")
+    for p in names:
+        print(f"  {p}")
+    if untagged:
+        print(f"{untagged} topic{'s have' if untagged != 1 else ' has'} no presentation, so complaint mode never picks "
+              f"{'them' if untagged != 1 else 'it'}.")
+    return {"presentations": names, "untagged": untagged}
+
+
 def cmd_common(args, rng):
     scenarios = load_scenarios()
     topics = load_pool(args.systems, scenarios["tiers"])
@@ -1016,16 +1115,29 @@ def cmd_common(args, rng):
     built = progress.setdefault("built", {})
     enc_counts = progress.setdefault("encounters", {})
     hist = topic_history(progress, read_log())
-    if len(args.systems) > 1:
+    complaint_mode = args.mode == "complaint" or bool(args.complaint)
+    if complaint_mode:
+        wanted = match_presentation(args.complaint, topics) if args.complaint else None
+        picks = pick_by_complaint(topics, built, args.batch, rng, hist, scenarios["review"], scenarios["tiers"], wanted)
+        if not picks:
+            sys.exit("None of the chosen systems' topics has a presentations list, so complaint mode has nothing to pick.")
+    elif len(args.systems) > 1:
         chosen = pick_mixed(topics, built, args.batch, rng, hist, scenarios["review"], scenarios["tiers"],
                             scenarios["step2_systems"])
+        picks = [(t, None) for t in chosen]
     else:  # one system: no Step 2 draw, so its picks are what they always were
         chosen = pick_topics(topics, built, args.batch, rng, hist, scenarios["review"], scenarios["tiers"])
+        picks = [(t, None) for t in chosen]
+    # The atypical roll has its own generator, so adding it left every other roll of a given
+    # --seed (topic, encounter, extras, ECG, patient frame) where it was.
+    side = random.Random(None if args.seed is None else f"atypical:{args.seed}")
     missing = unconverted = 0
     made = []
     with_ecg = []
-    for topic in chosen:
+    for topic, presentation in picks:
         sc = roll_scenario(scenarios, rng)
+        # Not rolled in complaint mode: the presentations list already covers the atypical routes.
+        atypical = not complaint_mode and side.random() < scenarios["extras"]["atypical_presentation"]
         dest = new_case_path()
         refs = topic["_refs"]
         states, blocks = [], []
@@ -1055,18 +1167,35 @@ def cmd_common(args, rng):
             enc_line += " (contains one planted error)" if sc["handover_error"] else " (accurate, no planted error)"
         extras = "\n".join(f"- {label}: {'ON' if sc['extras'][k] else 'off'}" for k, label in EXTRA_LABELS.items())
 
+        if presentation:  # the topic's own complaint may not be the route this case takes
+            complaint_line = (f"Presentation: {presentation} (open the case with this as the presenting complaint, "
+                              "in the patient's own words)\n")
+            special = COMPLAINT_TEXT
+            build = ("Build a presentation of this topic that arrives with the complaint above, as a Step 2 question "
+                     "or a real patient would show it. If that complaint is not this topic's textbook route, it must "
+                     "still be a recognised, documented presentation. ")
+        elif atypical:
+            complaint_line = (f"Usual presenting complaint: {complaint} (this case is atypical, so open with the complaint "
+                              "that fits the atypical presentation described below)\n" if complaint else "")
+            special = ATYPICAL_TEXT
+            build = "Build the atypical presentation described above instead of the common, typical one. "
+        else:
+            complaint_line = f"Presenting complaint: {complaint} (open the case with this complaint)\n" if complaint else ""
+            special = ""
+            build = "Build a common, typical presentation of this topic as a Step 2 question or a real patient would show it. "
+
         dest.write_text(
             "# Case seed (for the agent only)\n\n"
             "This is a built case. Follow the 'Built cases' rules in rounds mode.\n\n"
             f"Topic: {topic['topic']}\n"
-            + (f"Presenting complaint: {complaint} (open the case with this complaint)\n" if complaint else "")
+            + complaint_line
             + f"Patient frame: {frame}\n"
             f"Encounter: {enc_line}\n"
             f"Extras:\n{extras}\n\n"
+            + (special + "\n\n" if special else "")
             + "\n".join(blocks) + "\n"
             + (ecg_block + "\n" if ecg_block else "")
-            + "Build a common, typical presentation of this topic as a Step 2 question or a real "
-            "patient would show it. Grade all management against "
+            + build + "Grade all management against "
             + ("the current guideline.\n" if has_us else "current US practice.\n"),
             encoding="utf-8",
         )
@@ -1074,6 +1203,8 @@ def cmd_common(args, rng):
         progress.setdefault("cases", {})[dest.stem] = {
             "system": topic["_system"], "topic": topic["_key"], "encounter": sc["encounter"],
             "made": datetime.now().isoformat(timespec="seconds"),
+            **({"mode": "complaint", "presentation": presentation} if presentation else {}),
+            **({"atypical": True} if atypical else {}),
         }
         enc_counts[sc["encounter"]] = enc_counts.get(sc["encounter"], 0) + 1
         save_progress(progress)
@@ -1385,7 +1516,7 @@ def topic_warnings(table: dict, tiers: dict) -> list:
     step2_system, different ids with the same topic text or the same 'canonical' diagnosis, and
     tier or step2_system names scenarios.json doesn't have."""
     by_id, by_text, by_canon, out = {}, {}, {}, []
-    bad_tier, bad_step2 = {}, {}
+    bad_tier, bad_step2, bad_pres = {}, {}, {}
 
     for system in all_systems():
         try:
@@ -1398,7 +1529,12 @@ def topic_warnings(table: dict, tiers: dict) -> list:
             bad_step2.setdefault(str(default), set()).add(system)
         for t in data["topics"]:
             entry = {"system": system, "id": t["id"], "topic": str(t["topic"]),
-                     "step2": t.get("step2_system") or default}
+                     "step2": t.get("step2_system") or default,
+                     "pres": frozenset(presentations_of(t)) if "presentations" in t else None}
+            listed = t.get("presentations")
+            for p in (listed if isinstance(listed, list) else [listed] if listed else []):
+                if str(p).strip().lower() not in PRESENTATION_NAME:
+                    bad_pres.setdefault(str(p), set()).add(system)
             by_id.setdefault(t["id"], []).append(entry)
             by_text.setdefault(" ".join(str(t["topic"]).lower().split()), []).append(entry)
             if t.get("canonical"):
@@ -1417,6 +1553,10 @@ def topic_warnings(table: dict, tiers: dict) -> list:
             out.append(f"The shared topic '{tid}' has different step2_system values ("
                        + ", ".join(f"{e['system']}: {e['step2']}" for e in entries if e["step2"])
                        + f"). Mixed practice uses the first, {said[0]}.")
+        if len({e["pres"] for e in entries if e["pres"] is not None}) > 1:
+            out.append(f"The shared topic '{tid}' has different presentations in "
+                       + ", ".join(e["system"] for e in entries if e["pres"] is not None)
+                       + ". Complaint mode uses all of them.")
     flagged = set()  # one warning per group of topics
     for label, groups in (("The same topic text is listed under different ids", by_text),
                           ("Different ids are marked as the same diagnosis (canonical '{key}')", by_canon)):
@@ -1427,6 +1567,9 @@ def topic_warnings(table: dict, tiers: dict) -> list:
                 out.append(f"{label.format(key=key)}: " + ", ".join(f"{e['system']} id '{e['id']}' ('{e['topic']}')" for e in entries))
     for name, systems in sorted(bad_tier.items()):
         out.append(f"Tier '{name}' ({', '.join(sorted(systems))}) is not in scenarios.json, so those topics get weight 1.")
+    for name, systems in sorted(bad_pres.items()):
+        out.append(f"Presentation '{name}' ({', '.join(sorted(systems))}) is not in the list complaint mode uses, "
+                   "so it is ignored.")
     for name, systems in sorted(bad_step2.items()):
         out.append(f"Step 2 system '{name}' ({', '.join(sorted(systems))}) is not in scenarios.json, so those topics "
                    "count as untagged.")
@@ -1521,8 +1664,16 @@ def main():
     c = sub.add_parser("common", help="seed a typical case of a core topic")
     c.add_argument("--system", required=True, help="topic list in topics/, e.g. cardio" + several + ", or all")
     c.add_argument("--batch", type=int, default=1)
+    c.add_argument("--mode", choices=["system", "complaint"], default="system",
+                   help="complaint: draw a presenting complaint, then a topic that can present that way")
+    c.add_argument("--complaint", help='with --mode complaint: the presentation to use, e.g. "chest pain" '
+                                       "(default: a random one that has topics)")
     c.add_argument("--clip", action="store_true", help="copy the opening message to the clipboard")
     c.add_argument("--json", action="store_true", help=as_json)
+
+    pz = sub.add_parser("presentations", help="the presenting complaints complaint mode can use")
+    pz.add_argument("--system", default="all", help="one system, several separated by commas, or all (default)")
+    pz.add_argument("--json", action="store_true", help=as_json)
 
     r = sub.add_parser("report", help="fetch a real case report from Europe PMC")
     r.add_argument("--system", help="use this system's complaint list, e.g. cardio; several separated by commas "
@@ -1556,7 +1707,7 @@ def main():
     args = ap.parse_args()
     rng = random.Random(args.seed)
     handler = {"common": cmd_common, "report": cmd_report, "status": cmd_status, "prepare": cmd_prepare,
-               "review": cmd_review}[args.cmd]
+               "review": cmd_review, "presentations": cmd_presentations}[args.cmd]
 
     if not args.json:
         args.systems = parse_systems(args.system, args.cmd != "prepare")

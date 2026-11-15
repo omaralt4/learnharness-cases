@@ -17,6 +17,7 @@
     {
       "id": "stemi",
       "topic": "STEMI",
+      "presentations": ["chest pain", "dyspnea", "syncope/collapse", "altered mental status"],
       "guideline": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
       "guideline_file": "acs-2025.pdf",
       "verified": true,
@@ -31,6 +32,7 @@
     {
       "id": "nste_acs",
       "topic": "NSTE-ACS (NSTEMI or unstable angina)",
+      "presentations": ["chest pain", "dyspnea"],
       "guideline": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
       "guideline_file": "acs-2025.pdf",
       "verified": true,
@@ -46,6 +48,7 @@
     {
       "id": "cardiogenic_shock",
       "topic": "Cardiogenic shock complicating acute MI",
+      "presentations": ["hypotension/shock", "chest pain", "dyspnea", "altered mental status"],
       "guideline": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
       "guideline_file": "acs-2025.pdf",
       "verified": true,
@@ -58,6 +61,7 @@
     {
       "id": "mi_mechanical",
       "topic": "Mechanical complication after MI (papillary muscle rupture, VSD or free wall rupture)",
+      "presentations": ["dyspnea", "hypotension/shock", "chest pain"],
       "guideline": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
       "guideline_file": "acs-2025.pdf",
       "verified": true,
@@ -70,6 +74,7 @@
     {
       "id": "stable_angina",
       "topic": "Stable angina / chronic coronary disease, including the chest pain workup",
+      "presentations": ["chest pain", "dyspnea"],
       "guideline": "2023 AHA/ACC Guideline for the Management of Patients With Chronic Coronary Disease (with the 2021 AHA/ACC Chest Pain Guideline)",
       "guideline_file": "ccd-2023.pdf",
       "verified": true,
@@ -82,6 +87,7 @@
     {
       "id": "adhf",
       "topic": "Acute decompensated heart failure with reduced EF",
+      "presentations": ["dyspnea", "limb pain/swelling"],
       "guideline": "2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure",
       "guideline_file": "hf-2022.pdf",
       "verified": true,
@@ -95,6 +101,7 @@
     {
       "id": "hfref_gdmt",
       "topic": "Chronic HFrEF: starting and titrating guideline-directed medical therapy",
+      "presentations": ["dyspnea", "limb pain/swelling"],
       "guideline": "2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure",
       "guideline_file": "hf-2022.pdf",
       "verified": true,
@@ -107,6 +114,7 @@
     {
       "id": "hfpef",
       "topic": "HFpEF",
+      "presentations": ["dyspnea", "limb pain/swelling"],
       "guideline": "2022 AHA/ACC/HFSA Heart Failure Guideline plus the 2026 ACC Expert Consensus Decision Pathway on HFpEF",
       "guideline_file": "hfpef-ecdp-2026.pdf",
       "verified": true,
@@ -118,6 +126,7 @@
     {
       "id": "af_rvr",
       "topic": "Atrial fibrillation with rapid ventricular response",
+      "presentations": ["palpitations", "dyspnea", "chest pain", "dizziness"],
       "guideline": "2023 ACC/AHA/ACCP/HRS Guideline for the Diagnosis and Management of Atrial Fibrillation",
       "guideline_file": "af-2023.pdf",
       "verified": true,
@@ -132,6 +141,7 @@
     {
       "id": "af_outpatient",
       "topic": "New atrial fibrillation in clinic: stroke risk, anticoagulation, rate vs rhythm",
+      "presentations": ["palpitations", "dyspnea", "dizziness"],
       "guideline": "2023 ACC/AHA/ACCP/HRS Guideline for the Diagnosis and Management of Atrial Fibrillation",
       "guideline_file": "af-2023.pdf",
       "verified": true,
@@ -143,6 +153,7 @@
     {
       "id": "svt",
       "topic": "Paroxysmal supraventricular tachycardia",
+      "presentations": ["palpitations", "chest pain", "dizziness", "syncope/collapse"],
       "guideline": "2015 ACC/AHA/HRS Guideline for the Management of Adult Patients With Supraventricular Tachycardia",
       "guideline_file": "svt-2015.pdf",
       "verified": false,
@@ -158,6 +169,7 @@
     {
       "id": "brady",
       "topic": "Symptomatic bradycardia or high-grade AV block",
+      "presentations": ["dizziness", "syncope/collapse"],
       "guideline": "2018 ACC/AHA/HRS Guideline on the Evaluation and Management of Patients With Bradycardia and Cardiac Conduction Delay",
       "guideline_file": "brady-2018.pdf",
       "verified": false,
@@ -174,6 +186,7 @@
     {
       "id": "syncope",
       "topic": "Syncope",
+      "presentations": ["syncope/collapse"],
       "guideline": "2017 ACC/AHA/HRS Guideline for the Evaluation and Management of Patients With Syncope",
       "guideline_file": "syncope-2017.pdf",
       "verified": true,
@@ -188,6 +201,7 @@
     {
       "id": "cardiac_arrest",
       "topic": "Cardiac arrest or unstable ventricular tachycardia",
+      "presentations": ["syncope/collapse", "palpitations", "chest pain"],
       "guideline": "Current AHA Guidelines for CPR and Emergency Cardiovascular Care (ACLS)",
       "guideline_file": "acls.pdf",
       "verified": false,
@@ -196,6 +210,7 @@
     {
       "id": "aortic_stenosis",
       "topic": "Aortic stenosis",
+      "presentations": ["syncope/collapse", "chest pain", "dyspnea"],
       "guideline": "2020 ACC/AHA Guideline for the Management of Patients With Valvular Heart Disease",
       "guideline_file": "valve-2020.pdf",
       "verified": true,
@@ -206,6 +221,7 @@
     {
       "id": "mitral_regurg",
       "topic": "Mitral regurgitation (chronic primary or secondary)",
+      "presentations": ["dyspnea", "palpitations"],
       "guideline": "2020 ACC/AHA Guideline for the Management of Patients With Valvular Heart Disease",
       "guideline_file": "valve-2020.pdf",
       "verified": true,
@@ -217,6 +233,7 @@
     {
       "id": "mitral_stenosis",
       "topic": "Mitral stenosis (rheumatic)",
+      "presentations": ["dyspnea", "palpitations"],
       "guideline": "2020 ACC/AHA Guideline for the Management of Patients With Valvular Heart Disease",
       "guideline_file": "valve-2020.pdf",
       "verified": true,
@@ -229,6 +246,7 @@
     {
       "id": "endocarditis",
       "topic": "Infective endocarditis",
+      "presentations": ["fever", "dyspnea", "focal weakness"],
       "guideline": "2026 AHA Scientific Statement: Infective Endocarditis: Diagnosis, Antibiotic Therapy, and Management (uses 2023 Duke-ISCVID criteria)",
       "guideline_file": "endocarditis-2026.pdf",
       "verified": true,
@@ -240,6 +258,7 @@
     {
       "id": "pericarditis",
       "topic": "Acute pericarditis",
+      "presentations": ["chest pain", "fever"],
       "guideline": "2025 ESC Guidelines for the management of myocarditis and pericarditis (no current ACC/AHA guideline)",
       "guideline_file": "myoperi-esc-2025.pdf",
       "verified": true,
@@ -248,6 +267,7 @@
     {
       "id": "tamponade",
       "topic": "Cardiac tamponade",
+      "presentations": ["dyspnea", "hypotension/shock", "chest pain"],
       "guideline": "2025 ESC Guidelines for the management of myocarditis and pericarditis (no current ACC/AHA guideline)",
       "guideline_file": "myoperi-esc-2025.pdf",
       "verified": true,
@@ -258,6 +278,7 @@
     {
       "id": "myocarditis",
       "topic": "Acute myocarditis",
+      "presentations": ["chest pain", "dyspnea", "palpitations", "syncope/collapse"],
       "guideline": "2025 ESC Guidelines for the management of myocarditis and pericarditis (no current ACC/AHA guideline)",
       "guideline_file": "myoperi-esc-2025.pdf",
       "verified": true,
@@ -266,6 +287,7 @@
     {
       "id": "aortic_dissection",
       "topic": "Acute aortic dissection",
+      "presentations": ["chest pain", "back pain", "syncope/collapse", "focal weakness", "abdominal pain"],
       "guideline": "2022 ACC/AHA Guideline for the Diagnosis and Management of Aortic Disease",
       "guideline_file": "aortic-2022.pdf",
       "verified": false,
@@ -277,6 +299,7 @@
     {
       "id": "htn_emergency",
       "topic": "Hypertensive emergency",
+      "presentations": ["headache", "altered mental status", "chest pain", "dyspnea", "red eye/visual loss"],
       "guideline": "2025 AHA/ACC Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults",
       "guideline_file": "htn-2025.pdf",
       "verified": true,
@@ -287,6 +310,7 @@
     {
       "id": "htn_outpatient",
       "topic": "Newly diagnosed hypertension in clinic, including screening for secondary causes",
+      "presentations": [],
       "guideline": "2025 AHA/ACC Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults",
       "guideline_file": "htn-2025.pdf",
       "verified": true,
@@ -297,6 +321,7 @@
     {
       "id": "dyslipidemia",
       "topic": "Dyslipidemia and primary prevention risk assessment",
+      "presentations": [],
       "guideline": "2026 ACC/AHA Guideline on the Management of Dyslipidemia",
       "guideline_file": "lipids-2026.pdf",
       "verified": true,
@@ -305,6 +330,7 @@
     {
       "id": "pad",
       "topic": "Peripheral artery disease or acute limb ischemia",
+      "presentations": ["limb pain/swelling"],
       "guideline": "2024 ACC/AHA Guideline for the Management of Lower Extremity Peripheral Artery Disease",
       "guideline_file": "pad-2024.pdf",
       "verified": false,
@@ -313,6 +339,7 @@
     {
       "id": "hcm",
       "topic": "Hypertrophic cardiomyopathy",
+      "presentations": ["syncope/collapse", "chest pain", "dyspnea", "palpitations"],
       "guideline": "2024 AHA/ACC Guideline for the Management of Hypertrophic Cardiomyopathy",
       "guideline_file": "hcm-2024.pdf",
       "verified": false,
@@ -324,6 +351,7 @@
     {
       "id": "ruptured_aaa",
       "topic": "Ruptured / symptomatic abdominal aortic aneurysm",
+      "presentations": ["abdominal pain", "back pain", "syncope/collapse", "hypotension/shock"],
       "guideline": "2022 ACC/AHA Guideline for the Diagnosis and Management of Aortic Disease",
       "guideline_file": "aortic-2022.pdf",
       "verified": true,
@@ -332,6 +360,7 @@
       {
       "id": "acute_limb_ischemia",
       "topic": "Acute limb ischemia",
+      "presentations": ["limb pain/swelling"],
       "guideline": "2024 ACC/AHA/Multisociety Guideline for the Management of Lower Extremity Peripheral Artery Disease",
       "guideline_file": "pad-2024.pdf",
       "verified": true,

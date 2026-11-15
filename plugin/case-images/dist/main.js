@@ -369,7 +369,7 @@ function mountCases(ctx, container, signal) {
       const box = h("input", { type: "checkbox", checked: selected.has(name), onchange: () => {
         if (box.checked) selected.add(name); else selected.delete(name);
         remember({ systems: picked() });
-        if (tab === "progress" || tab === "review") renderTab();
+        if (tab === "progress" || tab === "review" || (tab === "new" && saved.mode === "complaint")) renderTab();
       } });
       systemsBox.append(h("label", { class: "rt-check" }, box, h("span", { text: name })));
     }
@@ -409,24 +409,29 @@ function mountCases(ctx, container, signal) {
       ...(result.notes || []).map(n => h("p", { class: "rt-muted", text: n })));
   }
 
-  function makerTab(current, { kind, intro, extraFields, collect, operation, actionLabel, busyLabel }) {
+  // `second` is an optional extra button ({ label, collect }) that runs the same operation with other input.
+  function makerTab(current, { kind, intro, extraFields, collect, operation, actionLabel, busyLabel, second }) {
     const batch = h("input", { class: "rt-input rt-num", type: "number", min: 1, max: 10, step: 1, value: saved.batch || 1, "aria-label": "How many cases" });
-    const go = button(actionLabel, run);
+    const go = button(actionLabel, () => run(go, actionLabel, collect));
+    const other = second ? button(second.label, () => run(other, second.label, second.collect), true) : null;
+    const buttons = [go, other].filter(Boolean);
     const out = h("div", { "aria-live": "polite" });
     if (lastMade && lastMade.kind === kind) out.append(madeBox(lastMade));
     panel.append(h("p", { class: "rt-muted", text: intro }), ...(extraFields || []),
-      h("div", { class: "rt-row" }, h("label", { class: "rt-check" }, h("span", { text: "How many" }), batch), go), out);
-    if (preparing) { go.disabled = true; out.prepend(h("p", { class: "rt-muted", text: "Guidelines are being prepared. Cases can be made when that finishes." })); }
+      h("div", { class: "rt-row" }, h("label", { class: "rt-check" }, h("span", { text: "How many" }), batch), ...buttons), out);
+    if (preparing) { for (const b of buttons) b.disabled = true; out.prepend(h("p", { class: "rt-muted", text: "Guidelines are being prepared. Cases can be made when that finishes." })); }
 
-    async function run() {
+    async function run(pressed, label, collectInput) {
       const asked = Math.min(10, Math.max(1, Math.round(Number(batch.value)) || 1));
       batch.value = asked;
       remember({ batch: asked });
-      go.disabled = true;
-      go.textContent = busyLabel;
+      let input;
+      try { input = collectInput(); } catch (e) { out.replaceChildren(errorBox(e)); return; }
+      for (const b of buttons) b.disabled = true;
+      pressed.textContent = busyLabel;
       out.replaceChildren(h("p", { class: "rt-muted", text: "This can take up to a minute when an ECG or article has to be downloaded." }));
       try {
-        const result = await ctx.call(operation, { systems: picked(), batch: asked, ...collect() });
+        const result = await ctx.call(operation, { systems: picked(), batch: asked, ...input });
         result.copied = await copyText(result.message);
         result.kind = kind;
         result.asked = asked;
@@ -435,18 +440,59 @@ function mountCases(ctx, container, signal) {
       } catch (e) {
         if (current()) out.replaceChildren(errorBox(e));
       } finally {
-        go.disabled = false;
-        go.textContent = actionLabel;
+        for (const b of buttons) b.disabled = false;
+        pressed.textContent = label;
       }
     }
   }
 
   function tabNew(current) {
-    makerTab(current, {
-      kind: "new", operation: "newCase", actionLabel: "Make case", busyLabel: "Making…",
-      intro: "Picks a topic you haven't seen, or a weak one that is due, from the ticked systems. Nothing about the case is shown here.",
-      collect: () => ({}),
-    });
+    const byComplaint = saved.mode === "complaint";
+    const choice = (value, label) => h("label", { class: "rt-check" },
+      h("input", { type: "radio", name: "rt-pick-by", checked: byComplaint === (value === "complaint"),
+        onchange: () => { remember({ mode: value }); renderTab(); } }),
+      h("span", { text: label }));
+    const pickBy = h("div", { class: "rt-row", role: "radiogroup", "aria-label": "Pick by" },
+      h("strong", { text: "Pick by" }), choice("system", "System"), choice("complaint", "Presenting complaint"));
+    const base = { kind: "new", operation: "newCase", actionLabel: "Make case", busyLabel: "Making…" };
+    if (!byComplaint) {
+      makerTab(current, { ...base,
+        intro: "Picks a topic you haven't seen, or a weak one that is due, from the ticked systems. Nothing about the case is shown here.",
+        extraFields: [pickBy], collect: () => ({}) });
+      return;
+    }
+
+    // By presenting complaint: a box that completes from the complaints the ticked systems have topics for.
+    let names = [];
+    const options = h("datalist", { id: "rt-presentations" });
+    const box = h("input", { class: "rt-input rt-wide", type: "search", list: "rt-presentations", maxlength: 60, autocomplete: "off",
+      value: saved.presentation || "", placeholder: "e.g. chest pain" });
+    const hint = h("p", { class: "rt-muted", text: "Loading the complaints…" });
+    ctx.call("presentations", { systems: picked() }).then(r => {
+      if (!current()) return;
+      names = r.presentations;
+      options.replaceChildren(...names.map(n => h("option", { value: n })));
+      hint.textContent = !names.length ? "No topic in the ticked systems has a presentations list yet."
+        : `${names.length} complaints have topics in the ticked systems.`
+          + (r.untagged ? ` ${r.untagged} topic${r.untagged === 1 ? " has" : "s have"} no complaint and can't come up here.` : "");
+    }, e => { if (current()) hint.textContent = errorText(e); });
+    const typed = () => {
+      const want = box.value.trim().toLowerCase().replace(/\s+/g, " ");
+      if (!want) throw new Error("Type a complaint, or use Random.");
+      const exact = names.find(n => n.toLowerCase() === want);
+      const close = names.filter(n => n.toLowerCase().includes(want));
+      if (!exact && close.length !== 1) {
+        throw new Error(close.length ? `Several complaints match: ${close.join(", ")}.` : "That isn't one of the complaints in the list. Start typing and pick one.");
+      }
+      box.value = exact || close[0];
+      remember({ presentation: box.value });
+      return { mode: "complaint", complaint: box.value };
+    };
+    makerTab(current, { ...base,
+      intro: "Starts from a presenting complaint instead of a system: a topic that can present that way is picked from the ticked systems, unseen ones and due weak ones first. You aren't told the topic or its system.",
+      extraFields: [pickBy, h("label", { class: "rt-field" }, h("span", { text: "Complaint" }), box, options), hint],
+      collect: typed,
+      second: { label: "Random complaint", collect: () => ({ mode: "complaint" }) } });
   }
 
   function tabReport(current) {
