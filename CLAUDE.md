@@ -151,4 +151,4 @@ Bump `version` in `manifest.json` for every plugin change the user will install.
 
 ## Commits
 
-Commit after each step that works, with a message that says what changed and why, so any single change can be rolled back. The first commit with the unmodified v1.1.0 plugin is `dede251`.
+Commit after each step that works, with a message that says what changed and why, so any single change can be rolled back. History was rewritten once, on 2026-11-15 before the first push, to use a GitHub no-reply author address and a generic name for the EM reference; commit hashes quoted anywhere before that date no longer exist. Commit with the repo's configured no-reply address. The first commit with the unmodified v1.1.0 plugin is `9f8ce07`.
