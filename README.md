@@ -8,7 +8,7 @@ Nothing here shows a case's topic, diagnosis or guideline before you finish it. 
 
 ## The Cases page
 
-After installing the plugin (see Setup), open **Cases** from the sidebar in LearnHarness.
+After installing the plugin (see Setting up from scratch), open **Cases** from the sidebar in LearnHarness.
 
 - **Systems**: tick one or several. Every file in `topics/` gets a checkbox. Several systems pool their topics, and the case never says which system it came from. With several ticked, cases are spread across the USMLE Step 2 systems (see Mixed practice).
 - **New case**: makes a case and copies the opening message. Start a Practice session and paste. **Pick by** chooses how: by system (the default), or by presenting complaint. For a complaint, start typing and pick one from the list (only complaints that have topics in the ticked systems are offered), or press **Random complaint**. You aren't told the topic or its system.
@@ -31,7 +31,8 @@ The plugin's settings page (the gear on the Cases page) has the **Cases folder**
 pick_case.py            the case picker
 scenarios.json          encounter weights, extras chances, review settings, tier and Step 2 system weights (edit freely)
 topics/<system>.json    topic list for a system: topics, their references, ECG codes
-10-doctrine.md          practice-agent instructions for rounds mode
+doctrine/10-doctrine.md practice-agent instructions for rounds mode (paste into LearnHarness Settings)
+skills/rounds-topic-file/SKILL.md   Claude skill that writes a topic list for a new system
 plugin/case-images/     the "Rounds tools" plugin (source of truth; install from here)
 *.bat                   Windows launchers
 
@@ -45,31 +46,139 @@ review.md               written by the review command
 python_path.txt         optional: full path to python.exe for the launchers
 ```
 
-## Setup
+## Setting up from scratch
 
-1. **Python 3.9 or newer.** If the launchers can't find it, put the full path to `python.exe` in a file named `python_path.txt` in this folder. Get the path with:
+This is for someone starting with nothing but this repository. Windows only.
 
-   ```
-   python -c "import sys; print(sys.executable)"
-   ```
+### 1. What you need
 
-2. **Packages.** The script runs on the standard library alone. ECGs and guideline conversion need extras:
+- **LearnHarness 0.6.1 or newer** ([github.com/amosblomqvist/learnharness](https://github.com/amosblomqvist/learnharness)). The plugin needs at least 0.6.1.
+- **Python 3.9 or newer.**
+- **Packages** for ECGs and guideline conversion (the picker itself runs on the standard library):
 
-   ```
-   python -m pip install numpy matplotlib pymupdf pymupdf4llm
-   ```
+  ```
+  python -m pip install numpy matplotlib pymupdf pymupdf4llm
+  ```
 
-3. **Guideline PDFs.** Save each guideline as `guidelines/<system>/<guideline_file>`, using the file names in `topics/<system>.json`. To see which are missing:
+- **This repository** in `Documents\LearnHarness-cases`. That is the folder the plugin looks in by default; anywhere else works if you set the Cases folder in the plugin's settings.
 
-   ```
-   python pick_case.py status --system cardio
-   ```
+  ```
+  git clone <this repository's URL> "%USERPROFILE%\Documents\LearnHarness-cases"
+  ```
 
-4. **Prepare.** Run `Prepare cardio guidelines.bat` once (and again after adding PDFs). It converts the PDFs to searchable text so the agent reads only the sections a case needs. For another system, use the Guidelines tab or `python pick_case.py prepare --system <name>`.
+If the launchers can't find Python, put the full path to `python.exe` in a file named `python_path.txt` in this folder. Get the path with:
 
-5. **Plugin.** Close LearnHarness, run `Install plugin.bat`, then start LearnHarness and enable "Rounds tools" under Settings → Community plugins. The launcher copies `plugin/case-images/dist` into `%APPDATA%\LearnHarness\data\plugins\case-images\dist` and leaves the plugin's own `data` folder alone. Run it again after every plugin update. The plugin is plain JavaScript with no build step; it runs `pick_case.py` with your Python and has the same access to your files as any LearnHarness plugin.
+```
+python -c "import sys; print(sys.executable)"
+```
 
-6. **Doctrine.** In LearnHarness Settings, paste the contents of `10-doctrine.md` as the prompt override for the practice agent.
+### 2. Get the guideline files
+
+The repository has no guideline or book files: they belong to their publishers, and `.gitignore` keeps them out. Download each one yourself and save it under **exactly** the file name below. The topic lists refer to these names. Search for the title; most of the guidelines are free on the publisher's or society's site.
+
+**Cardiology** (`guidelines/cardio/`). Emergency medicine topics reuse most of these, so get them even if you only want EM.
+
+| Save as | Guideline | Used by |
+|---|---|---|
+| `guidelines/cardio/acls.pdf` | Current AHA Guidelines for CPR and Emergency Cardiovascular Care (ACLS) | cardio, em |
+| `guidelines/cardio/acs-2025.pdf` | 2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes | cardio, em |
+| `guidelines/cardio/af-2023.pdf` | 2023 ACC/AHA/ACCP/HRS Guideline for the Diagnosis and Management of Atrial Fibrillation | cardio, em |
+| `guidelines/cardio/aortic-2022.pdf` | 2022 ACC/AHA Guideline for the Diagnosis and Management of Aortic Disease | cardio, em |
+| `guidelines/cardio/brady-2018.pdf` | 2018 ACC/AHA/HRS Guideline on the Evaluation and Management of Patients With Bradycardia and Cardiac Conduction Delay | cardio, em |
+| `guidelines/cardio/ccd-2023.pdf` | 2023 AHA/ACC Guideline for the Management of Patients With Chronic Coronary Disease (with the 2021 AHA/ACC Chest Pain Guideline) | cardio |
+| `guidelines/cardio/endocarditis-2026.pdf` | 2026 AHA Scientific Statement: Infective Endocarditis: Diagnosis, Antibiotic Therapy, and Management (uses 2023 Duke-ISCVID criteria) | cardio |
+| `guidelines/cardio/hcm-2024.pdf` | 2024 AHA/ACC Guideline for the Management of Hypertrophic Cardiomyopathy | cardio |
+| `guidelines/cardio/hf-2022.pdf` | 2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure | cardio, em |
+| `guidelines/cardio/hfpef-ecdp-2026.pdf` | 2022 AHA/ACC/HFSA Heart Failure Guideline plus the 2026 ACC Expert Consensus Decision Pathway on HFpEF | cardio |
+| `guidelines/cardio/htn-2025.pdf` | 2025 AHA/ACC Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults | cardio, em |
+| `guidelines/cardio/lipids-2026.pdf` | 2026 ACC/AHA Guideline on the Management of Dyslipidemia | cardio |
+| `guidelines/cardio/myoperi-esc-2025.pdf` | 2025 ESC Guidelines for the management of myocarditis and pericarditis (no current ACC/AHA guideline) | cardio, em |
+| `guidelines/cardio/pad-2024.pdf` | 2024 ACC/AHA Guideline for the Management of Lower Extremity Peripheral Artery Disease | cardio, em |
+| `guidelines/cardio/svt-2015.pdf` | 2015 ACC/AHA/HRS Guideline for the Management of Adult Patients With Supraventricular Tachycardia | cardio, em |
+| `guidelines/cardio/syncope-2017.pdf` | 2017 ACC/AHA/HRS Guideline for the Evaluation and Management of Patients With Syncope | cardio, em |
+| `guidelines/cardio/valve-2020.pdf` | 2020 ACC/AHA Guideline for the Management of Patients With Valvular Heart Disease | cardio |
+
+**Emergency medicine** (`guidelines/em/`)
+
+| Save as | Guideline | Used by |
+|---|---|---|
+| `guidelines/em/anaphylaxis-2023.pdf` | Anaphylaxis: A 2023 Practice Parameter Update (AAAAI/ACAAI JTFPP) | em |
+| `guidelines/em/apap-2023.pdf` | Management of Acetaminophen Poisoning in the US and Canada: A Consensus Statement (JAMA Netw Open 2023) | em |
+| `guidelines/em/dka-2024.pdf` | Hyperglycemic Crises in Adults With Diabetes: A Consensus Report (ADA/EASD/JBDS/AACE/DTS, Diabetes Care 2024;47:1257-1275) | em |
+| `guidelines/em/mtbi-2023.pdf` | 2023 ACEP Clinical Policy: Adult Patients Presenting to the ED With Mild Traumatic Brain Injury | em |
+| `guidelines/em/pe-2026.pdf` | 2026 AHA/ACC/ACCP/ACEP/CHEST/SCAI/SHM/SIR/SVM/SVN Guideline for the Evaluation and Management of Acute Pulmonary Embolism in Adults | em |
+| `guidelines/em/sah-2023.pdf` | 2023 AHA/ASA Guideline for the Management of Patients With Aneurysmal Subarachnoid Hemorrhage | em |
+| `guidelines/em/sepsis-2026.pdf` | Surviving Sepsis Campaign: International Guidelines for Management of Sepsis and Septic Shock 2026 (Crit Care Med 2026;54:725-812) | em |
+| `guidelines/em/sepsis-peds-2026.pdf` | Surviving Sepsis Campaign International Guidelines for Sepsis and Septic Shock in Children 2026 (Pediatr Crit Care Med 2026) | em |
+| `guidelines/em/stroke-2026.pdf` | 2026 AHA/ASA Guideline for the Early Management of Patients With Acute Ischemic Stroke | em |
+
+**A main EM reference of your choice.** Most EM topics also point at chapter files of a general emergency medicine reference, called the "EM handbook" in `topics/em.json`. None is included, and none is named here: use a reference of your choice that you are entitled to use. Save it as a PDF with chapter bookmarks:
+
+```
+guidelines/em/em-handbook.pdf
+```
+
+Prepare (next step) splits a book into one text file per chapter using the PDF's bookmarks, and lists what it wrote in `guidelines/em/chapters.txt`. The EM topic list expects these 13 chapter files:
+
+```
+em-handbook-02-life-threatening-emergencies.md
+em-handbook-03-medicine.md
+em-handbook-04-toxicology.md
+em-handbook-05-infectious-diseases.md
+em-handbook-06-environmental-emergencies.md
+em-handbook-08-major-trauma.md
+em-handbook-09-wounds-fractures-and-orthopaedics.md
+em-handbook-10-surgery.md
+em-handbook-11-ophthalmology.md
+em-handbook-12-ear-nose-and-throat.md
+em-handbook-13-obstetrics-and-gynaecology.md
+em-handbook-14-psychiatry.md
+em-handbook-15-paediatric-emergencies.md
+```
+
+Your book's chapters will have their own names, so after Prepare, open `chapters.txt` and change each `"file"` in `topics/em.json` to the chapter of your book that covers that topic. Set `"region"` on those references to where your book is from: a non-US region tells the agent to use it for presentation and approach and to grade management against US practice. `python pick_case.py status --system em` shows which files a topic can't find. Never commit the book or its chapter files.
+
+Without a main reference, EM topics that have a US guideline still work from that guideline; the rest fall back to "work from current US practice".
+
+To see what is still missing at any point:
+
+```
+python pick_case.py status
+```
+
+### 3. Run Prepare
+
+Prepare converts the PDFs to searchable text, so the agent reads only the sections a case needs and nothing is shown to you mid-case. Run it once, and again whenever you add a PDF.
+
+```
+python pick_case.py prepare --system all
+```
+
+`Prepare cardio guidelines.bat` does the same for cardiology alone, and the **Guidelines** tab on the Cases page does it from inside LearnHarness. It takes several minutes for a book.
+
+### 4. Install the plugin
+
+1. Close LearnHarness.
+2. Run `Install plugin.bat`. It copies `plugin/case-images/dist` into `%APPDATA%\LearnHarness\data\plugins\case-images\dist` and leaves the plugin's own `data` folder alone.
+3. Start LearnHarness and enable **Rounds tools** under Settings → Community plugins.
+
+Run the launcher again after every update to this repository. The plugin is plain JavaScript with no build step; it runs `pick_case.py` with your Python and has the same access to your files as any LearnHarness plugin.
+
+### 5. Paste the doctrine
+
+In LearnHarness Settings, paste the whole contents of `doctrine/10-doctrine.md` as the prompt override for the practice agent. Paste it again whenever that file changes.
+
+### 6. Start a case
+
+1. Open **Cases** from the sidebar in LearnHarness.
+2. Tick one or more systems, open **New case** and press **Make case**. The opening message is copied for you. It contains only a file path.
+3. Start a Practice session and paste.
+
+The launchers (`New cardio case.bat`, `New EM case.bat`) do steps 1 and 2 without opening the page.
+
+### Adding topics with Claude
+
+`skills/rounds-topic-file/SKILL.md` is a Claude skill that builds or extends a `topics/<system>.json` in the shape this picker expects, with verified US guideline references and a download table. Add it to Claude as a skill and ask for a topic file for a new system.
 
 ## Launchers
 
@@ -165,6 +274,6 @@ Ties are random.
 
 - ECGs come from [PTB-XL](https://physionet.org/content/ptb-xl/1.0.3/) (PhysioNet, CC BY 4.0), downloaded on demand.
 - Case reports come from open-access articles on [Europe PMC](https://europepmc.org/); each case file records the article's own license.
-- Guideline PDFs belong to their publishers and are not part of this repository.
+- Guideline PDFs and reference books belong to their publishers and are not part of this repository. Each user supplies their own copies.
 
-This repository is licensed under AGPL-3.0 (see `LICENSE`). `10-doctrine.md` is derived from LearnHarness's AGPL-3.0 practice prompt.
+This repository is licensed under AGPL-3.0 (see `LICENSE`). `doctrine/10-doctrine.md` is derived from LearnHarness's AGPL-3.0 practice prompt.

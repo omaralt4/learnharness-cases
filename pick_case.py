@@ -136,7 +136,7 @@ PRESENTATIONS = [
 ]
 PRESENTATION_NAME = {p.lower(): p for p in PRESENTATIONS}
 
-# Instructions that go into a seed, not into 10-doctrine.md (which only says to follow them).
+# Instructions that go into a seed, not into doctrine/10-doctrine.md (which only says to follow them).
 ATYPICAL_TEXT = (
     "Atypical presentation. Present the diagnosis the way it gets missed in real life and on exams. For example, "
     "MI in an elderly diabetic or a woman with dyspnoea or fatigue and no chest pain, PE as syncope, appendicitis "

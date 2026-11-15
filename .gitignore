@@ -2,12 +2,18 @@
 /cases/
 # Guideline PDFs and their text versions belong to the publishers
 /guidelines/
+# ...and no book or guideline file anywhere else either
+*.pdf
+*.epub
+chapters.txt
 # Downloaded PTB-XL ECG recordings
 /data/
 # Personal study data
 /progress.json
 /progress.json*.bak
 /case_log.jsonl
+# A folder of the above set aside before a reset
+/_before-reset/
 /review.md
 # Machine-specific
 /python_path.txt
